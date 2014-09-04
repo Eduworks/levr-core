@@ -7,7 +7,7 @@ This and the LEVR source has enjoyed the contributions from the following people
 	Daniel Harvey (Retired Eduworks)
 	Devlin Junker (Eduworks)
 
-The code has been funded by the following projects, thanks to the U.S. Government.
+The code has been enhanced in part or used in the following projects, thanks to the U.S. Government.
 
 	UCASTER, NSF Grant 1044161
 	TRADEM, DOD SBIR W911-QX-12-C-0055
