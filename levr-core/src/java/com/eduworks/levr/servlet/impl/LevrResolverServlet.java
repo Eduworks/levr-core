@@ -228,11 +228,6 @@ public class LevrResolverServlet extends LevrServlet
 	@Override
 	public void go(boolean isPost, HttpServletRequest request, HttpServletResponse response, ServletOutputStream outputStream) throws IOException
 	{
-	   
-	   
-	   System.out.println("********** LevrResolverServlet: GO ***************");
-	   
-	   
 		String requestURI = request.getRequestURI();
 		String requestString = requestURI.substring(requestURI.indexOf(getServletPathExample()) + getServletPathExample().length());
 		Map<String, String[]> parameterMap = Collections.synchronizedMap(new HashMap<String, String[]>(request.getParameterMap()));

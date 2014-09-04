@@ -6,51 +6,13 @@
 	<property name="levr.core.name" value="levr-core" />
 	<property name="levr.core.build.dir" value="../levr-core/web/WEB-INF/classes" />
 	<property name="levr.core.src" value="../levr-core/src/java" />
-	<property name="levr.core.base.src" value="../levr-core-base/src/java" />
-	<property name="levr.core.semantic.src" value="../levr-core-semantic/src/java" />
 	<property name="levr.core.dist" value="../levr-core/dist" />
 	<property name="levr.core.deps" value="../levr-core/deps" />
 	<property name="levr.core.lib" value="../levr-core/lib" />
 	<property name="levr.core.web.lib" value="../levr-core/web/WEB-INF/lib" />
 	<property name="levr.core.web" value="../levr-core/web/WEB-INF" />
 	<property name="levr.core.etc" value="../levr-core/etc" />
-	<property name="levr.core.base.etc" value="../levr-core-base/etc" />
-	<property name="levr.core.semantic.etc" value="../levr-core-semantic/etc" />
 	<import file="../eduworks-common/build.xml" />
-
-	<target name="levr-core-copy-config" depends="" description="Copies the src config files to etc, useful in development">
-		<copy todir="${levr.core.etc}">
-			<fileset dir="${levr.core.src}">
-				<include name="*.json" />
-				<include name="*.rsl" />
-				<include name="*.rs2" />
-				<include name="**/*.json" />
-				<include name="**/*.rsl" />
-				<include name="**/*.rs2" />
-			</fileset>
-		</copy>
-		<copy todir="${levr.core.etc}">
-			<fileset dir="${levr.core.base.src}">
-				<include name="*.json" />
-				<include name="*.rsl" />
-				<include name="*.rs2" />
-				<include name="**/*.json" />
-				<include name="**/*.rsl" />
-				<include name="**/*.rs2" />
-			</fileset>
-		</copy>
-		<copy todir="${levr.core.etc}">
-			<fileset dir="${levr.core.semantic.src}">
-				<include name="*.json" />
-				<include name="*.rsl" />
-				<include name="*.rs2" />
-				<include name="**/*.json" />
-				<include name="**/*.rsl" />
-				<include name="**/*.rs2" />
-			</fileset>
-		</copy>
-
-	</target>
 
 	<!-- used to depend on compile -->
 	<target name="levr-core-docs" depends="" description="generates documentation">
