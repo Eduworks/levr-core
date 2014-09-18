@@ -286,7 +286,7 @@ public class LevrResolverServlet extends LevrServlet
 		else
 			try
 			{
-				execute(log, request, response, requestString, parameterMap, pw, dataStreams, getContent(request));
+				execute(log, request, response, requestString, parameterMap, pw, dataStreams);
 			}
 			catch (JSONException e)
 			{
@@ -340,7 +340,7 @@ public class LevrResolverServlet extends LevrServlet
 	}
 
 	public static void execute(Logger log, HttpServletRequest request, HttpServletResponse response, String requestString, Map<String, String[]> parameterMap,
-			PrintStream pw, Map<String, InputStream> dataStreams, String rawQueryString) throws IOException, JSONException
+			PrintStream pw, Map<String, InputStream> dataStreams) throws IOException, JSONException
 	{
 		if (lastChecked + 5000 < System.currentTimeMillis())
 		{
@@ -437,7 +437,7 @@ public class LevrResolverServlet extends LevrServlet
 		catch (SoftException ex)
 		{
 			Resolver.clearThreadCache();
-			execute(log, request, response, requestString, parameterMap, pw, dataStreams, rawQueryString);
+			execute(log, request, response, requestString, parameterMap, pw, dataStreams);
 		}
 		finally
 		{
