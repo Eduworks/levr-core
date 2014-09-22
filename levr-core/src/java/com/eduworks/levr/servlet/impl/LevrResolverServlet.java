@@ -7,9 +7,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.Reader;
 import java.io.StringBufferInputStream;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
@@ -90,6 +88,15 @@ public class LevrResolverServlet extends LevrServlet
 			mergeInto(config, scriptStreams);
 
 			loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
+			
+			for (String webService : EwJson.getKeys(functions))
+			{
+				if (webService.toLowerCase().endsWith("autoexecute"))
+				{
+					execute(log,true,webService,new HashMap<String, String[]>(),
+							new HashMap<String, InputStream>(),true);
+				}
+			}
 			return true;
 		}
 		catch (JSONException e)
@@ -207,22 +214,6 @@ public class LevrResolverServlet extends LevrServlet
 	public String getServletUsage()
 	{
 		return "To be written.";
-	}
-
-	protected String getContent(HttpServletRequest request) throws IOException
-	{
-		try
-		{
-			Reader reader = new InputStreamReader(request.getInputStream(), "UTF-8");
-			String content = IOUtils.toString(reader);
-			reader.close();
-			return (content == null) ? null : content.trim();
-		}
-		catch (IllegalStateException ise)
-		{
-			ise.printStackTrace();
-			return "";
-		}
 	}
 
 	@Override
