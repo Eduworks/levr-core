@@ -67,6 +67,14 @@ public class LevrResolverServlet extends LevrServlet
 	static
 	{
 		ResolverFactory.populateFactorySpecsDynamically();
+		try
+		{
+			initConfig(System.out);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public static boolean initConfig(PrintStream pw) throws IOException
