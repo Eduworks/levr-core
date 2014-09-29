@@ -30,4 +30,4 @@ levr-core requires the following to build or use:
 
 The bug tracker for levr-core is being currently maintained on GitHub, at the following url: https://github.com/Eduworks/levr-core/issues
 
-The lead developer for levr-core is Fritz (fritz.ray@eduworks.com).
+The lead contact for levr-core is Fritz (fritz.ray@eduworks.com).
