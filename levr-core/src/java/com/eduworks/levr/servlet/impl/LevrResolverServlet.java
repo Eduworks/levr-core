@@ -101,8 +101,15 @@ public class LevrResolverServlet extends LevrServlet
 			{
 				if (webService.toLowerCase().endsWith("autoexecute"))
 				{
-					execute(log,true,webService,new HashMap<String, String[]>(),
+					try
+					{
+						execute(log,true,webService,new HashMap<String, String[]>(),
 							new HashMap<String, InputStream>(),true);
+					}
+					catch (Exception ex)
+					{
+						ex.printStackTrace();
+					}
 				}
 			}
 			return true;
