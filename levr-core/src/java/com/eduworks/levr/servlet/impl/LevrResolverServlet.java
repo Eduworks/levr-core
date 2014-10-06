@@ -480,6 +480,8 @@ public class LevrResolverServlet extends LevrServlet
 		{
 			jsonObject = functions.getJSONObject(requestString);
 		}
+		if (jsonObject == null)
+			throw new RuntimeException("Service does not exist: " + requestString);
 		return (Resolvable) ResolverFactory.create(jsonObject);
 	}
 
