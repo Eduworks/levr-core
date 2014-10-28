@@ -340,8 +340,8 @@ public class LevrResolverServlet extends LevrServlet
 	{
 		LinkedHashMap<String, InputStream> results = new LinkedHashMap<String, InputStream>();
 
-		results.put("simple", new StringBufferInputStream(IOUtils.toString(request.getReader())));
-		log.debug("Decoded " + results.size() + " multi part mime inputs.");
+		results.put("simple", new ByteArrayInputStream(IOUtils.toByteArray(request.getInputStream())));
+		log.debug("Decoded " + results.size() + " raw input.");
 		return results;
 	}
 
