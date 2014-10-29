@@ -149,6 +149,7 @@ public class LevrResolverServlet extends LevrServlet
 					codeFiles.add(f);
 					mergeInto(config, functions, LevrResolverV2Parser.decodeStreams(f));
 					lastModified = Math.max(f.lastModified(), lastModified);
+					System.out.println("Loaded: " + f.getPath());
 				}
 				JSONObject scriptPack = null;
 				Map<String, JSONObject> scriptStreams = null;

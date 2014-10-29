@@ -51,6 +51,11 @@ public class LevrResolverV2Parser
 			e.printStackTrace();
 			return null;
 		}
+		catch (Throwable e)
+		{
+			System.out.println("Overflowed on " + fileToDecode.getPath());
+			return null;
+		}
 		finally
 		{
 			IOUtils.closeQuietly(input);

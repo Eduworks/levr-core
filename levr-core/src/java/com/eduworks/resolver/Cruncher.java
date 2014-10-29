@@ -193,6 +193,11 @@ public abstract class Cruncher implements Resolvable, Cloneable
 	protected Double getAsDouble(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		Object obj = get(key, parameters, dataStreams);
+		return objectToDouble(obj);
+	}
+
+	public Double objectToDouble(Object obj)
+	{
 		if (obj == null)
 			return null;
 		if (obj instanceof Integer)
@@ -225,6 +230,11 @@ public abstract class Cruncher implements Resolvable, Cloneable
 	public String getAsString(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		Object obj = get(key, parameters, dataStreams);
+		return objectToString(obj);
+	}
+
+	public String objectToString(Object obj)
+	{
 		if (obj == null)
 			return null;
 		if (obj instanceof Integer)
