@@ -29,7 +29,7 @@ import com.eduworks.resolver.exception.EditableRuntimeException;
  */
 public abstract class Cruncher implements Resolvable, Cloneable
 {
-	Map<String, Object> data = null;
+	public Map<String, Object> data = null;
 	public boolean resolverCompatibilityReplaceMode = true;
 	public static Logger log = Logger.getLogger(Cruncher.class);
 
