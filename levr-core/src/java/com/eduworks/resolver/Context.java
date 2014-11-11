@@ -16,11 +16,38 @@ public class Context extends EwMap<String,Object>
 			ce.go();
 		super.finalize();
 	}
+
+	public synchronized Object get(String s){
+		return super.get(s);
+	}
+	public synchronized Object put(String s,Object o){
+		return super.put(s,o);
+	}
 	
 	EwList<ContextEvent> successEvents = new EwList<ContextEvent>();
 	EwList<ContextEvent> failureEvents = new EwList<ContextEvent>();
 	EwList<ContextEvent> finallyEvents = new EwList<ContextEvent>();
 	EwList<ContextEvent> finalizeEvents = new EwList<ContextEvent>();
+	public void onSuccess(ContextEvent c)
+	{
+		successEvents.add(c);
+	}
+
+	public void onFailure(ContextEvent c)
+	{
+		failureEvents.add(c);
+	}
+
+	public void onFinally(ContextEvent c)
+	{
+		finallyEvents.add(c);
+	}
+
+	public void onFinalize(ContextEvent c)
+	{
+		finalizeEvents.add(c);
+	}
+	
 	public void success()
 	{
 		for (ContextEvent ce : successEvents)
