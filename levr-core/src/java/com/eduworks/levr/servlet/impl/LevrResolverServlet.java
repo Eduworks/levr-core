@@ -457,8 +457,8 @@ public class LevrResolverServlet extends LevrServlet
 	{
 		Resolvable resolver = requestStringBackoff(requestString, useFunctions, parameterMap);
 		if (noisy) log.info("Request: " + requestString + toString(parameterMap));
-
 		Object result = resolver.resolve(parameterMap, dataStreams);
+		if (noisy) log.info("Response: " + requestString + toString(parameterMap));
 		return result;
 	}
 
