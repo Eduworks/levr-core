@@ -126,7 +126,7 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return data.keySet();
 	}
 
-	protected Object resolveAChild(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected Object resolveAChild(String key, Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		try
 		{
@@ -136,17 +136,17 @@ public abstract class Cruncher implements Resolvable, Cloneable
 				Resolver resolver = (Resolver) o;
 				if (resolverCompatibilityReplaceMode)
 					resolver = (Resolver) resolver.clone();
-				return Resolver.resolveAChild(parameters, dataStreams, key, resolver);
+				return Resolver.resolveAChild(c,parameters, dataStreams, key, resolver);
 			}
 			if (o instanceof Cruncher)
 			{
 				Cruncher cruncher = (Cruncher) o;
-				return Resolver.resolveAChild(parameters, dataStreams, key, cruncher);
+				return Resolver.resolveAChild(c,parameters, dataStreams, key, cruncher);
 			}
 			if (o instanceof Scripter)
 			{
 				Scripter scripter = (Scripter) o;
-				return Resolver.resolveAChild(parameters, dataStreams, key, scripter);
+				return Resolver.resolveAChild(c,parameters, dataStreams, key, scripter);
 			}
 			return o;
 		}
@@ -182,17 +182,17 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return false;
 	}
 
-	protected String optAsString(String key, String defaultx, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected String optAsString(String key, String defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		String result = getAsString(key, parameters, dataStreams);
+		String result = getAsString(key, c, parameters, dataStreams);
 		if (result == null)
 			return defaultx;
 		return result;
 	}
 
-	protected Double getAsDouble(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected Double getAsDouble(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		Object obj = get(key, parameters, dataStreams);
+		Object obj = get(key, c, parameters, dataStreams);
 		return objectToDouble(obj);
 	}
 
@@ -212,12 +212,12 @@ public abstract class Cruncher implements Resolvable, Cloneable
 			return Double.parseDouble((String) obj);
 	}
 
-	public Double optAsDouble(String key, double defaultx, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public Double optAsDouble(String key, double defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		if (has(key))
 			try
 			{
-				return getAsDouble(key, parameters, dataStreams);
+				return getAsDouble(key, c, parameters, dataStreams);
 			}
 			catch (NumberFormatException ex)
 			{
@@ -227,9 +227,9 @@ public abstract class Cruncher implements Resolvable, Cloneable
 			return defaultx;
 	}
 
-	public String getAsString(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public String getAsString(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		Object obj = get(key, parameters, dataStreams);
+		Object obj = get(key, c, parameters, dataStreams);
 		return objectToString(obj);
 	}
 
@@ -249,37 +249,37 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return (String) obj;
 	}
 
-	protected boolean optAsBoolean(String key, boolean defaultx, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected boolean optAsBoolean(String key, boolean defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		String string = getAsString(key, parameters, dataStreams);
+		String string = getAsString(key, c, parameters, dataStreams);
 		if (string == null)
 			return defaultx;
 		return Boolean.parseBoolean(string);
 	}
 
-	protected JSONObject getObjAsJsonObject(Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected JSONObject getObjAsJsonObject(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		String key = "obj";
-		return getAsJsonObject(key, parameters, dataStreams);
+		return getAsJsonObject(key, c, parameters, dataStreams);
 	}
 
-	protected Object getObj(Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected Object getObj(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		String key = "obj";
 		if (hasParam(key))
 			return Resolver.getParameter(data.get(key).toString().substring(1), parameters);
-		return get(key, parameters, dataStreams);
+		return get(key, c, parameters, dataStreams);
 	}
 
-	protected JSONArray getObjAsJsonArray(Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected JSONArray getObjAsJsonArray(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		String key = "obj";
-		return getAsJsonArray(key, parameters, dataStreams);
+		return getAsJsonArray(key, c, parameters, dataStreams);
 	}
 
-	public JSONObject getAsJsonObject(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public JSONObject getAsJsonObject(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		Object obj = get(key, parameters, dataStreams);
+		Object obj = get(key, c, parameters, dataStreams);
 		if (obj == null)
 			return null;
 		if (!(obj instanceof JSONObject))
@@ -287,9 +287,9 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return (JSONObject) obj;
 	}
 
-	public JSONArray getAsJsonArray(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public JSONArray getAsJsonArray(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		Object obj = get(key, parameters, dataStreams);
+		Object obj = get(key, c, parameters, dataStreams);
 		if (obj == null)
 			return null;
 		if (obj instanceof EwList)
@@ -311,12 +311,12 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		data.put(key, value);
 	}
 
-	protected Object get(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected Object get(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		if (hasParam(key))
 			return (String) Resolver.getParameter(data.get(key).toString().substring(1), parameters);
 
-		Object obj = resolveAChild(key, parameters, dataStreams);
+		Object obj = resolveAChild(key, c,parameters, dataStreams);
 		return obj;
 	}
 

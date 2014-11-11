@@ -124,7 +124,7 @@ public abstract class Scripter implements Resolvable, Cloneable {
 		return data.keySet();
 	}
 
-	public Object resolve(String key, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException {
+	public Object resolve(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException {
 		try {
 			JSONObject functionPack = new JSONObject();
 			functionPack.put("function", key);
@@ -136,17 +136,17 @@ public abstract class Scripter implements Resolvable, Cloneable {
 				Resolver resolver = (Resolver) o;
 				if (resolverCompatibilityReplaceMode)
 					resolver = (Resolver) resolver.clone();
-				return Resolver.resolveAChild(parameters, dataStreams, key,
+				return Resolver.resolveAChild(c,parameters, dataStreams, key,
 						resolver);
 			}
 			if (o instanceof Cruncher) {
 				Cruncher cruncher = (Cruncher) o;
-				return Resolver.resolveAChild(parameters, dataStreams, key,
+				return Resolver.resolveAChild(c,parameters, dataStreams, key,
 						cruncher);
 			}
 			if (o instanceof Scripter) {
 				Scripter cruncher = (Scripter) o;
-				return Resolver.resolveAChild(parameters, dataStreams, key,
+				return Resolver.resolveAChild(c,parameters, dataStreams, key,
 						cruncher);
 			}
 			return o;

@@ -19,7 +19,7 @@ public interface Resolvable extends Cloneable
 	static final String	ATTRIB_DECALS	= "W911-QY-13-C-0087";
 	static final String	ATTRIB_PULSAR	= "W911-QY-13-C-0030 Subcontract 13-0030-8975-01";
 
-	Object resolve(Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
+	Object resolve(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
 			throws JSONException;
 	void build(String key, Object value) throws JSONException;
 	Object clone() throws CloneNotSupportedException;

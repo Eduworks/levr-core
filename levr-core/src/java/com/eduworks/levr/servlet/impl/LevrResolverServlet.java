@@ -8,7 +8,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.StringBufferInputStream;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +37,7 @@ import com.eduworks.lang.json.EwJsonCollection;
 import com.eduworks.lang.util.EwCache;
 import com.eduworks.lang.util.EwJson;
 import com.eduworks.levr.servlet.LevrServlet;
+import com.eduworks.resolver.Context;
 import com.eduworks.resolver.Resolvable;
 import com.eduworks.resolver.Resolver;
 import com.eduworks.resolver.ResolverFactory;
@@ -101,15 +101,19 @@ public class LevrResolverServlet extends LevrServlet
 			{
 				if (webService.toLowerCase().endsWith("autoexecute"))
 				{
+					Context c = new Context();
 					try
 					{
-						execute(log,true,webService,new HashMap<String, String[]>(),
-							new HashMap<String, InputStream>(),true);
+						execute(log,true,webService,
+							c,new HashMap<String, String[]>(), new HashMap<String, InputStream>(), true);
+						c.success();
 					}
 					catch (Exception ex)
 					{
+						c.failure();
 						ex.printStackTrace();
 					}
+					c.finish();
 				}
 			}
 			return true;
@@ -291,16 +295,22 @@ public class LevrResolverServlet extends LevrServlet
 				pw.print("{\"error\":\"" + e.toString() + "\"}");
 			}
 		else
+		{
+			Context c = new Context();
 			try
 			{
-				execute(log, request, response, requestString, parameterMap, pw, dataStreams);
+				execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
+				c.success();
 			}
 			catch (JSONException e)
 			{
+				c.failure();
 				if (response != null)
 					response.setContentType("text/plain");
 				pw.print("{\"error\":\"" + e.toString() + "\"}");
 			}
+			c.finish();
+		}
 
 		pw.flush();
 
@@ -346,8 +356,8 @@ public class LevrResolverServlet extends LevrServlet
 		return results;
 	}
 
-	public static void execute(Logger log, HttpServletRequest request, HttpServletResponse response, String requestString, Map<String, String[]> parameterMap,
-			PrintStream pw, Map<String, InputStream> dataStreams) throws IOException, JSONException
+	public static void execute(Logger log, HttpServletRequest request, HttpServletResponse response, String requestString, Context c,
+			Map<String, String[]> parameterMap, PrintStream pw, Map<String, InputStream> dataStreams) throws IOException, JSONException
 	{
 		if (lastChecked + 5000 < System.currentTimeMillis())
 		{
@@ -381,7 +391,7 @@ public class LevrResolverServlet extends LevrServlet
 			parameterMap.put("threadId", new String[] { Thread.currentThread().getName() });
 
 			ResolverFactory.populateFactorySpecsDynamically();
-			Object result = execute(log, false, requestString, parameterMap, dataStreams,true);
+			Object result = execute(log, false, requestString,  c,parameterMap, dataStreams, true);
 
 			response.setHeader("cache-control", "private, no-cache, no-store");
 			if (result instanceof String)
@@ -444,7 +454,7 @@ public class LevrResolverServlet extends LevrServlet
 		catch (SoftException ex)
 		{
 			Resolver.clearThreadCache();
-			execute(log, request, response, requestString, parameterMap, pw, dataStreams);
+			execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
 		}
 		finally
 		{
@@ -452,12 +462,12 @@ public class LevrResolverServlet extends LevrServlet
 		}
 	}
 
-	public static Object execute(Logger log, boolean useFunctions, String requestString, Map<String, String[]> parameterMap,
-			Map<String, InputStream> dataStreams,boolean noisy) throws JSONException
+	public static Object execute(Logger log, boolean useFunctions, String requestString, Context c,
+			Map<String, String[]> parameterMap,Map<String, InputStream> dataStreams, boolean noisy) throws JSONException
 	{
 		Resolvable resolver = requestStringBackoff(requestString, useFunctions, parameterMap);
 		if (noisy) log.info("Request: " + requestString + toString(parameterMap));
-		Object result = resolver.resolve(parameterMap, dataStreams);
+		Object result = resolver.resolve(c, parameterMap, dataStreams);
 		if (noisy) log.info("Response: " + requestString + toString(parameterMap));
 		return result;
 	}
