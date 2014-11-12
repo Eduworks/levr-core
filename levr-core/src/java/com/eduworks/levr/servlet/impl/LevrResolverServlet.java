@@ -96,7 +96,7 @@ public class LevrResolverServlet extends LevrServlet
 			mergeInto(config, scriptStreams);
 
 			loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
-			
+
 			for (String webService : EwJson.getKeys(functions))
 			{
 				if (webService.toLowerCase().endsWith("autoexecute"))
@@ -104,8 +104,7 @@ public class LevrResolverServlet extends LevrServlet
 					Context c = new Context();
 					try
 					{
-						execute(log,true,webService,
-							c,new HashMap<String, String[]>(), new HashMap<String, InputStream>(), true);
+						execute(log, true, webService, c, new HashMap<String, String[]>(), new HashMap<String, InputStream>(), true);
 						c.success();
 					}
 					catch (Exception ex)
@@ -275,7 +274,7 @@ public class LevrResolverServlet extends LevrServlet
 			pw = new PrintStream(os);
 		else
 			crossDomainFixStart(request, pw);
-		
+
 		response.setHeader("Access-Control-Allow-Origin", "*");
 
 		if (!isPost && !jsonpSecurityKey.isEmpty())
@@ -309,7 +308,10 @@ public class LevrResolverServlet extends LevrServlet
 					response.setContentType("text/plain");
 				pw.print("{\"error\":\"" + e.toString() + "\"}");
 			}
-			c.finish();
+			finally
+			{
+				c.finish();
+			}
 		}
 
 		pw.flush();
@@ -391,7 +393,7 @@ public class LevrResolverServlet extends LevrServlet
 			parameterMap.put("threadId", new String[] { Thread.currentThread().getName() });
 
 			ResolverFactory.populateFactorySpecsDynamically();
-			Object result = execute(log, false, requestString,  c,parameterMap, dataStreams, true);
+			Object result = execute(log, false, requestString, c, parameterMap, dataStreams, true);
 
 			response.setHeader("cache-control", "private, no-cache, no-store");
 			if (result instanceof String)
@@ -462,13 +464,15 @@ public class LevrResolverServlet extends LevrServlet
 		}
 	}
 
-	public static Object execute(Logger log, boolean useFunctions, String requestString, Context c,
-			Map<String, String[]> parameterMap,Map<String, InputStream> dataStreams, boolean noisy) throws JSONException
+	public static Object execute(Logger log, boolean useFunctions, String requestString, Context c, Map<String, String[]> parameterMap,
+			Map<String, InputStream> dataStreams, boolean noisy) throws JSONException
 	{
 		Resolvable resolver = requestStringBackoff(requestString, useFunctions, parameterMap);
-		if (noisy) log.info("Request: " + requestString + toString(parameterMap));
+		if (noisy)
+			log.info("Request: " + requestString + toString(parameterMap));
 		Object result = resolver.resolve(c, parameterMap, dataStreams);
-		if (noisy) log.info("Response: " + requestString + toString(parameterMap));
+		if (noisy)
+			log.info("Response: " + requestString + toString(parameterMap));
 		return result;
 	}
 
@@ -478,7 +482,8 @@ public class LevrResolverServlet extends LevrServlet
 		// If it works, then add the remaining part to a parameter.
 		String oldRequestString = requestString;
 		String paramString = "";
-		while (requestString.contains("/") && requestString.length() > 0 && config.has(requestString) == false && (!useFunctions || functions.has(requestString)))
+		while (requestString.contains("/") && requestString.length() > 0 && config.has(requestString) == false
+				&& (!useFunctions || functions.has(requestString)))
 		{
 			paramString += requestString.substring(requestString.lastIndexOf("/"));
 			requestString = requestString.substring(0, requestString.lastIndexOf("/"));
