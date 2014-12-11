@@ -114,12 +114,12 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 		return new String[] { getResolverName() };
 	}
 
-	public static synchronized Object getCache(String cacheEntry)
+	public static synchronized Object getCache(Context c, String cacheEntry)
 	{
-		return EwCache.getCache(CACHE).get(cacheEntry);
+		return c.get(cacheEntry);
 	}
 
-	public static synchronized void putCache(String cacheEntry, Object o)
+	public static synchronized void putCache(Context c, String cacheEntry, Object o)
 	{
 		if (o == null)
 			EwCache.getCache(CACHE).remove(cacheEntry);
