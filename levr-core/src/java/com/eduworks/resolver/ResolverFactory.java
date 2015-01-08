@@ -1,6 +1,7 @@
 package com.eduworks.resolver;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -143,7 +144,7 @@ public class ResolverFactory
 	{
 		if (factorySpecs != null)
 			return;
-		Set<URL> urlsForCurrentClasspath = ClasspathHelper.forManifest();
+		Collection<URL> urlsForCurrentClasspath = ClasspathHelper.forManifest();
 		EwSet<URL> urls = new EwSet<URL>();
 		for (URL url : urlsForCurrentClasspath)
 			if (!url.toString().contains("icu4j"))
