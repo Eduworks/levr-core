@@ -4,7 +4,7 @@ import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
@@ -168,7 +168,7 @@ public class LevrHttpServer extends Server
 	protected void setupMetadataServer(int port, String soapAddress, String resourceBase, String[] welcomePages,
 			Class<? extends LevrServlet>... servletClasses)
 	{
-		SocketConnector connector = new SocketConnector();
+		ServerConnector connector = new ServerConnector(this);
 		connector.setPort(port);
 //		connector.setIdleTimeout(Long.MAX_VALUE);
 		setConnectors(new Connector[] { connector });

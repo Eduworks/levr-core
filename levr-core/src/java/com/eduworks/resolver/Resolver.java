@@ -575,7 +575,7 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 	public static void resolveAllChildren(Context c,JSONObject settings, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		@SuppressWarnings("unchecked")
-		final Iterator<String> keys = settings.sortedKeys();
+		final Iterator<String> keys = EwJsonObject.sortedKeys(settings);
 
 		while (keys.hasNext())
 			resolveAChild(c,settings, parameters, dataStreams, keys.next());

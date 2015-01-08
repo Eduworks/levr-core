@@ -21,18 +21,19 @@ public abstract class LevrServlet extends HttpServlet
 
 	protected static Logger log = Logger.getLogger(LevrResolverServlet.class);
 
-
 	/* ABSTRACT METHODS */
 
 	public abstract void go(boolean isPost, HttpServletRequest request, HttpServletResponse response, ServletOutputStream outputStream) throws IOException;
-	public abstract String getServletPath();
-	public abstract String getServletUsage();
 
+	public abstract String getServletPath();
+
+	public abstract String getServletUsage();
 
 	/* OVERRIDDEN METHODS */
 
 	/**
-	 * Both GET and POST execute in the same fashion. The only difference is that a GET is guaranteed not to have datastreams (files) attached to it.
+	 * Both GET and POST execute in the same fashion. The only difference is
+	 * that a GET is guaranteed not to have datastreams (files) attached to it.
 	 */
 	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -58,7 +59,8 @@ public abstract class LevrServlet extends HttpServlet
 	}
 
 	/**
-	 * Both GET and POST execute in the same fashion. The only difference is that a GET is guaranteed not to have datastreams (files) attached to it.
+	 * Both GET and POST execute in the same fashion. The only difference is
+	 * that a GET is guaranteed not to have datastreams (files) attached to it.
 	 */
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -82,8 +84,10 @@ public abstract class LevrServlet extends HttpServlet
 			closeOutputStream(request, outputStream);
 		}
 	}
+
 	/**
-	 * Both GET and POST execute in the same fashion. The only difference is that a GET is guaranteed not to have datastreams (files) attached to it.
+	 * Both GET and POST execute in the same fashion. The only difference is
+	 * that a GET is guaranteed not to have datastreams (files) attached to it.
 	 */
 	@Override
 	public void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
@@ -111,15 +115,18 @@ public abstract class LevrServlet extends HttpServlet
 		}
 	}
 
-
 	/* PROTECTED/PUBLIC METHODS */
 
 	/**
 	 * Appropriately wraps a JSONP call if the request has a callback parameter.
-	 * This is required by cross-domain ajax service calls. See:
-	 * <a href="http://bob.pythonmac.org/archives/2005/12/05/remote-json-jsonp/">this link</a>
-	 * @param request HTTP Request
-	 * @param resultsAsString The JSONP object to return.
+	 * This is required by cross-domain ajax service calls. See: <a
+	 * href="http://bob.pythonmac.org/archives/2005/12/05/remote-json-jsonp/"
+	 * >this link</a>
+	 * 
+	 * @param request
+	 *            HTTP Request
+	 * @param resultsAsString
+	 *            The JSONP object to return.
 	 * @return If appropriate, a JSONP object.
 	 */
 	protected String crossDomainFix(HttpServletRequest request, String resultsAsString)
@@ -148,10 +155,15 @@ public abstract class LevrServlet extends HttpServlet
 	/**
 	 * Get an integer value from the request object, defaulting to a known value
 	 * if it is not present.
-	 * @param request HTTP request
-	 * @param key HTTP request parameter name
-	 * @param defValue the default value if key does not exist
-	 * @return the value corresponding to key parsed as an int, or the default value
+	 * 
+	 * @param request
+	 *            HTTP request
+	 * @param key
+	 *            HTTP request parameter name
+	 * @param defValue
+	 *            the default value if key does not exist
+	 * @return the value corresponding to key parsed as an int, or the default
+	 *         value
 	 */
 	protected int getIntFromParameter(HttpServletRequest request, String key, int defValue)
 	{
@@ -160,10 +172,15 @@ public abstract class LevrServlet extends HttpServlet
 	}
 
 	/**
-	 * Get value from the request object, defaulting to a known value if it is not present.
-	 * @param request HTTP request
-	 * @param key HTTP request parameter name
-	 * @param defValue the default value if key does not exist
+	 * Get value from the request object, defaulting to a known value if it is
+	 * not present.
+	 * 
+	 * @param request
+	 *            HTTP request
+	 * @param key
+	 *            HTTP request parameter name
+	 * @param defValue
+	 *            the default value if key does not exist
 	 * @return the value corresponding to key, or the default value
 	 */
 	protected static String getStringFromParameter(HttpServletRequest request, String key, String defValue)
@@ -176,11 +193,17 @@ public abstract class LevrServlet extends HttpServlet
 	}
 
 	/**
-	 * Get an string value from the request object, defaulting to a known value if it is not present.
-	 * @param request HTTP request
-	 * @param key HTTP request parameter name
-	 * @param defValue the value to return if the key doesn't exist
-	 * @return the param, attrib, or header value corresponding to the key, or defValue
+	 * Get an string value from the request object, defaulting to a known value
+	 * if it is not present.
+	 * 
+	 * @param request
+	 *            HTTP request
+	 * @param key
+	 *            HTTP request parameter name
+	 * @param defValue
+	 *            the value to return if the key doesn't exist
+	 * @return the param, attrib, or header value corresponding to the key, or
+	 *         defValue
 	 */
 	protected String getStringFromRequest(HttpServletRequest request, String key, String defValue)
 	{
@@ -198,18 +221,21 @@ public abstract class LevrServlet extends HttpServlet
 	private void closeOutputStream(HttpServletRequest request, ServletOutputStream outputStream) throws IOException
 	{
 		// If not yet handled, the OutputStream should not be closed
-		if (request instanceof Request && !((Request)request).isHandled()) return;
+		if (request instanceof Request && !((Request) request).isHandled())
+			return;
 
 		outputStream.close();
 	}
 
-	private void handleException(HttpServletResponse response, ServletOutputStream outputStream, Throwable e)
-		throws IOException
+	private void handleException(HttpServletResponse response, ServletOutputStream outputStream, Throwable e) throws IOException
 	{
 		response.setStatus(500);
-		outputStream.println(e.getMessage());
-		outputStream.flush();
 		e.printStackTrace();
+		if (outputStream != null)
+		{
+			outputStream.println(e.getMessage());
+			outputStream.flush();
+		}
 	}
 
 	@Override
