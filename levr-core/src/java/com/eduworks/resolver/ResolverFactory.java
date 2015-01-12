@@ -149,6 +149,7 @@ public class ResolverFactory
 		for (URL url : urlsForCurrentClasspath)
 			if (!url.toString().contains("icu4j"))
 				urls.add(url);
+		System.out.println("We are now going to scan for any Resolvers, Crunchers, or Scripters.");
 		Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(urls).setScanners(new SubTypesScanner(),
 				new TypeAnnotationsScanner().filterResultsBy(new Predicate<String>()
 				{
@@ -166,22 +167,22 @@ public class ResolverFactory
 						return false;
 					}
 				}), new ResourcesScanner()));
-		System.out.println("Finished Scanning. Getting subtypes.");
+		System.out.println("Finished Scanning. Getting subtypes and initializing classes.");
 		Set<Class<? extends Resolver>> subTypesOf = reflections.getSubTypesOf(Resolver.class);
-		System.out.println("Resolver.");
 		factorySpecs = new EwMap<String, Class<? extends Resolver>>();
 
+		int resolvers = 0, crunchers = 0, scripters = 0;
 		for (Class<? extends Resolver> c : subTypesOf)
 		{
 			try
 			{
-				System.out.println("On resolver: " + c.getName());
 				Resolver newInstance = c.newInstance();
 				for (String s : newInstance.getResolverNames())
 				{
 					factorySpecs.put(s, c);
-					System.out.println(s + " -> " + c.getName());
+					// System.out.println(s + " -> " + c.getName());
 				}
+				resolvers++;
 			}
 			catch (InstantiationException ex)
 			{
@@ -192,6 +193,7 @@ public class ResolverFactory
 
 			}
 		}
+		System.out.println(resolvers + " Resolvers.");
 
 		Set<Class<? extends Cruncher>> csubTypesOf = reflections.getSubTypesOf(Cruncher.class);
 		cruncherSpecs = new EwMap<String, Class<? extends Cruncher>>();
@@ -205,12 +207,14 @@ public class ResolverFactory
 				{
 					if (factorySpecs.containsKey(s))
 					{
-						System.out.println("Conflict: Resolver exists for " + s + ", it must be accessed with the 'c' prefix.");
+						// System.out.println("Conflict: Resolver exists for " +
+						// s + ", it must be accessed with the 'c' prefix.");
 						break;
 					}
-					System.out.println(s + " -> " + c.getName());
+					// System.out.println(s + " -> " + c.getName());
 					cruncherSpecs.put(s, c);
 				}
+				crunchers++;
 			}
 			catch (InstantiationException ex)
 			{
@@ -221,6 +225,9 @@ public class ResolverFactory
 
 			}
 		}
+
+		System.out.println(crunchers + " Crunchers.");
+
 		Set<Class<? extends Scripter>> ssubTypesOf = reflections.getSubTypesOf(Scripter.class);
 		scripterSpecs = new EwMap<String, Class<? extends Scripter>>();
 
@@ -233,12 +240,14 @@ public class ResolverFactory
 				{
 					if (factorySpecs.containsKey(key))
 					{
-						System.out.println("Conflict: Resolver exists for " + key + ", it must be accessed with the 's' prefix.");
+						// System.out.println("Conflict: Resolver exists for " +
+						// key + ", it must be accessed with the 's' prefix.");
 						break;
 					}
-					System.out.println(key + " -> " + s.getName());
+					// System.out.println(key + " -> " + s.getName());
 					scripterSpecs.put(key, s);
 				}
+				scripters++;
 			}
 			catch (InstantiationException ex)
 			{
@@ -249,6 +258,7 @@ public class ResolverFactory
 
 			}
 		}
+		System.out.println(scripters + " Scripters.");
 	}
 
 	private static Resolvable getCorrectResolver(String name) throws JSONException

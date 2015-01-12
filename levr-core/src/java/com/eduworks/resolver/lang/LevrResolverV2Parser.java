@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.TreeSet;
 
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonTokenStream;
@@ -38,11 +39,10 @@ public class LevrResolverV2Parser
 			{
 				e.printStackTrace();
 			}
-			log.info("Reloaded Resolver V2 Code File. " + rp.servlets.size() + " servlets detected.");
-			log.debug(rp.servlets.keySet());
-			System.out.println(rp.servlets.keySet());
+			if (rp.servlets.size() > 0)
+			log.debug(new TreeSet<String>(rp.servlets.keySet()));
 			if (rp.functions.size() > 0)
-				System.out.println(rp.functions.keySet());
+				log.debug(new TreeSet<String>(rp.functions.keySet()));
 				
 			return new Tuple<Map<String, JSONObject>,Map<String, JSONObject>>(rp.servlets,rp.functions);
 		}

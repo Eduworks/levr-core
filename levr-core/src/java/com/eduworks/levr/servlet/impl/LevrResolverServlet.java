@@ -141,24 +141,23 @@ public class LevrResolverServlet extends LevrServlet
 			{
 				if (f.getName().endsWith(".rsl"))
 				{
-					System.out.println("Loading: " + f.getPath());
+					log.debug("Loading: " + f.getPath());
 					codeFiles.add(f);
 					mergeInto(config, LevrResolverParser.decodeStreams(f));
 					lastModified = Math.max(f.lastModified(), lastModified);
 				}
 				if (f.getName().endsWith(".rs2"))
 				{
-					System.out.println("Loading: " + f.getPath());
+					log.debug("Loading: " + f.getPath());
 					codeFiles.add(f);
 					mergeInto(config, functions, LevrResolverV2Parser.decodeStreams(f));
 					lastModified = Math.max(f.lastModified(), lastModified);
-					System.out.println("Loaded: " + f.getPath());
 				}
 				JSONObject scriptPack = null;
 				Map<String, JSONObject> scriptStreams = null;
 				if (f.getName().endsWith(".psl"))
 				{
-					System.out.println("Loading: " + f.getPath());
+					log.debug("Loading: " + f.getPath());
 					codeFiles.add(f);
 					fileHandle = new FileInputStream(f);
 					String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
@@ -172,7 +171,7 @@ public class LevrResolverServlet extends LevrServlet
 				}
 				if (f.getName().endsWith(".jsl"))
 				{
-					System.out.println("Loading: " + f.getPath());
+					log.debug("Loading: " + f.getPath());
 					codeFiles.add(f);
 					fileHandle = new FileInputStream(f);
 					String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
