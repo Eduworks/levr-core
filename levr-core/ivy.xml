@@ -23,5 +23,7 @@
 	<exclude org="com.ibm.icu"/>
 	<exclude module="slf4j-log4j12"/>
 	<exclude module="slf4j-simple"/>
+	<exclude module="google-collections"/>
+	<exclude org="com.google.collections"/>
   </dependencies>
 </ivy-module>
