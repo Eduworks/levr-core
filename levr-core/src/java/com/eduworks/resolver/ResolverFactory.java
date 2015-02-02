@@ -192,6 +192,10 @@ public class ResolverFactory
 			{
 
 			}
+			catch (NullPointerException e)
+			{
+				System.out.println("Error instantiating class: " + c.getName());
+			}
 		}
 		System.out.println(resolvers + " Resolvers.");
 
