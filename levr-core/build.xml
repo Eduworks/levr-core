@@ -52,7 +52,7 @@
 			</fileset>
 		</path>
 	    
-		<javac srcdir="${levr.core.src}" destdir="${levr.core.build.dir}" debug="${compile.debug}" source="1.5" classpathref="levr-core-classpath" />
+		<javac srcdir="${levr.core.src}" destdir="${levr.core.build.dir}" debug="true" source="1.5" classpathref="levr-core-classpath" />
 		<copy todir="${levr.core.build.dir}">
 			<fileset dir="${levr.core.src}">
 				<include name="*.xml" />
