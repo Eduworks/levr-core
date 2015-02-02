@@ -1,8 +1,10 @@
 package com.eduworks.resolver;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -150,7 +152,10 @@ public class ResolverFactory
 			if (!url.toString().contains("icu4j"))
 				urls.add(url);
 		System.out.println("We are now going to scan for any Resolvers, Crunchers, or Scripters.");
-		Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(urls).setScanners(new SubTypesScanner(),
+		List<ClassLoader> classLoadersList = new ArrayList<ClassLoader>();
+		classLoadersList.add(ClasspathHelper.contextClassLoader());
+		classLoadersList.add(ClasspathHelper.staticClassLoader());
+		Reflections reflections = new Reflections(new ConfigurationBuilder().addClassLoaders(classLoadersList).setUrls(urls).setScanners(new SubTypesScanner(),
 				new TypeAnnotationsScanner().filterResultsBy(new Predicate<String>()
 				{
 					@Override
