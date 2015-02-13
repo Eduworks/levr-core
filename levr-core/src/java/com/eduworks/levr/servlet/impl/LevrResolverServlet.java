@@ -110,7 +110,7 @@ public class LevrResolverServlet extends LevrServlet
 					catch (Exception ex)
 					{
 						c.failure();
-						ex.printStackTrace();
+						log.debug("Auto-Execute failed.",ex);
 					}
 					c.finish();
 				}
