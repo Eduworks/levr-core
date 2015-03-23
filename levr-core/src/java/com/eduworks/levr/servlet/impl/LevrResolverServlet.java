@@ -79,54 +79,63 @@ public class LevrResolverServlet extends LevrServlet
 
 	public static boolean initConfig(PrintStream pw) throws IOException
 	{
-		FileReader input = null;
-		try
+
+		if (lastChecked + 5000 < System.currentTimeMillis())
 		{
-			config = new JSONObject();
-			functions = new JSONObject();
-
-			codeFiles = new EwList<File>();
-
-			String embeddedName = "commands";
-			JSONObject scriptPack = new JSONObject();
-			scriptPack.put("function", "javascript");
-			scriptPack.put("expression", embeddedCode);
-			Map<String, JSONObject> scriptStreams = new EwMap<String, JSONObject>();
-			scriptStreams.put(embeddedName, scriptPack);
-			mergeInto(config, scriptStreams);
-
-			loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
-
-			for (String webService : EwJson.getKeys(functions))
+			lastChecked = System.currentTimeMillis();
+			if (config == null || getFilesLastModified(new File(EwFileSystem.getWebConfigurationPath())) != lastModified || codeFiles.size() == 0)
 			{
-				if (webService.toLowerCase().endsWith("autoexecute"))
+				FileReader input = null;
+				try
 				{
-					Context c = new Context();
-					try
+					config = new JSONObject();
+					functions = new JSONObject();
+
+					codeFiles = new EwList<File>();
+
+					String embeddedName = "commands";
+					JSONObject scriptPack = new JSONObject();
+					scriptPack.put("function", "javascript");
+					scriptPack.put("expression", embeddedCode);
+					Map<String, JSONObject> scriptStreams = new EwMap<String, JSONObject>();
+					scriptStreams.put(embeddedName, scriptPack);
+					mergeInto(config, scriptStreams);
+
+					loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
+
+					for (String webService : EwJson.getKeys(functions))
 					{
-						execute(log, true, webService, c, new HashMap<String, String[]>(), new HashMap<String, InputStream>(), true);
-						c.success();
+						if (webService.toLowerCase().endsWith("autoexecute"))
+						{
+							Context c = new Context();
+							try
+							{
+								execute(log, true, webService, c, new HashMap<String, String[]>(), new HashMap<String, InputStream>(), true);
+								c.success();
+							}
+							catch (Exception ex)
+							{
+								c.failure();
+								log.debug("Auto-Execute failed.", ex);
+							}
+							c.finish();
+						}
 					}
-					catch (Exception ex)
-					{
-						c.failure();
-						log.debug("Auto-Execute failed.",ex);
-					}
-					c.finish();
+					return true;
+				}
+				catch (JSONException e)
+				{
+					pw.println("Error in config: " + e.getMessage());
+					e.printStackTrace();
+					return false;
+				}
+				finally
+				{
+					IOUtils.closeQuietly(input);
 				}
 			}
-			return true;
 		}
-		catch (JSONException e)
-		{
-			pw.println("Error in config: " + e.getMessage());
-			e.printStackTrace();
-			return false;
-		}
-		finally
-		{
-			IOUtils.closeQuietly(input);
-		}
+		return true;
 	}
 
 	public static void loadAdditionalConfigFiles(File f) throws JSONException
@@ -360,16 +369,8 @@ public class LevrResolverServlet extends LevrServlet
 	public static void execute(Logger log, HttpServletRequest request, HttpServletResponse response, String requestString, Context c,
 			Map<String, String[]> parameterMap, PrintStream pw, Map<String, InputStream> dataStreams) throws IOException, JSONException
 	{
-		if (lastChecked + 5000 < System.currentTimeMillis())
-		{
-			lastChecked = System.currentTimeMillis();
-			if (config == null || getFilesLastModified(new File(EwFileSystem.getWebConfigurationPath())) != lastModified || codeFiles.size() == 0)
-			{
-				if (!initConfig(pw))
-					return;
-				log.info("Reloaded Resolver Config.");
-			}
-		}
+		if (!initConfig(pw))
+			return;
 
 		final boolean flushCache = getParameter("flushCache", parameterMap);
 		final boolean flushAllCache = getParameter("flushAllCache", parameterMap);

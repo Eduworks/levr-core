@@ -16,6 +16,8 @@ public class Context extends EwMap<String,Object>
 			ce.go();
 		super.finalize();
 	}
+	
+	
 
 	public synchronized Object get(String s){
 		return super.get(s);
