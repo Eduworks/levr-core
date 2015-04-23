@@ -284,6 +284,8 @@ public class LevrResolverServlet extends LevrServlet
 			crossDomainFixStart(request, pw);
 
 		response.setHeader("Access-Control-Allow-Origin", "*");
+		response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
+		response.setHeader("Access-Control-Allow-Headers", "Content-Type, Content-Range, Content-Disposition, Content-Description");
 
 		if (!isPost && !jsonpSecurityKey.isEmpty())
 			try
