@@ -193,10 +193,6 @@ public class LevrHttpServer extends Server
 			this.start();
 			join();
 			System.out.println("Server started. Thread count: " + getThreadPool().getThreads());
-			System.out.println("Free Memory - " + Runtime.getRuntime().freeMemory());
-			System.out.println("Max Memory - " + Runtime.getRuntime().maxMemory());
-			System.out.println("Total Memory - " + Runtime.getRuntime().totalMemory());
-			System.out.println("Available CPU - " + Runtime.getRuntime().availableProcessors());
 		}
 		else
 		{
