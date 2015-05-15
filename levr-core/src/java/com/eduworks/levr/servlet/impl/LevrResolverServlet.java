@@ -472,9 +472,10 @@ public class LevrResolverServlet extends LevrServlet
 		Resolvable resolver = requestStringBackoff(requestString, useFunctions, parameterMap);
 		if (noisy)
 			log.info("Request: " + requestString + toString(parameterMap));
+		long ms = System.currentTimeMillis();
 		Object result = resolver.resolve(c, parameterMap, dataStreams);
 		if (noisy)
-			log.info("Response: " + requestString + toString(parameterMap));
+			log.info("Response ("+(System.currentTimeMillis()-ms)+"ms): " + requestString + toString(parameterMap));
 		return result;
 	}
 
