@@ -257,6 +257,14 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return Boolean.parseBoolean(string);
 	}
 
+	protected int optAsInteger(String key, int defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	{
+		String string = getAsString(key, c, parameters, dataStreams);
+		if (string == null)
+			return defaultx;
+		return Integer.parseInt(string);
+	}
+
 	protected JSONObject getObjAsJsonObject(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		String key = "obj";
