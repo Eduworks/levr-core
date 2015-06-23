@@ -1,5 +1,7 @@
 package com.eduworks.resolver;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.eduworks.lang.EwList;
 import com.eduworks.lang.EwMap;
 
@@ -8,6 +10,11 @@ public class Context extends EwMap<String,Object>
 	public Context()
 	{
 		
+	}
+	public HttpServletRequest request = null;
+	public Context(HttpServletRequest request)
+	{
+		this.request = request;
 	}
 	@Override
 	protected void finalize() throws Throwable

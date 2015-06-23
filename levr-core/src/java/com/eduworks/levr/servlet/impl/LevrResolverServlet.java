@@ -305,7 +305,7 @@ public class LevrResolverServlet extends LevrServlet
 			}
 		else
 		{
-			Context c = new Context();
+			Context c = new Context(request);
 			try
 			{
 				execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
