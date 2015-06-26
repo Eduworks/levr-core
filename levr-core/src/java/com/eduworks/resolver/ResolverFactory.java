@@ -147,10 +147,13 @@ public class ResolverFactory
 		if (factorySpecs != null)
 			return;
 		Collection<URL> urlsForCurrentClasspath = ClasspathHelper.forManifest();
+		urlsForCurrentClasspath.addAll(ClasspathHelper.forJavaClassPath());
+		urlsForCurrentClasspath.addAll(ClasspathHelper.forClassLoader());
 		EwSet<URL> urls = new EwSet<URL>();
 		for (URL url : urlsForCurrentClasspath)
 			if (!url.toString().contains("icu4j"))
 				urls.add(url);
+		System.out.println(urls.toString());
 		System.out.println("We are now going to scan for any Resolvers, Crunchers, or Scripters.");
 		List<ClassLoader> classLoadersList = new ArrayList<ClassLoader>();
 		classLoadersList.add(ClasspathHelper.contextClassLoader());
@@ -197,6 +200,10 @@ public class ResolverFactory
 			{
 
 			}
+			catch (NoClassDefFoundError e)
+			{
+
+			}
 			catch (NullPointerException e)
 			{
 				System.out.println("Error instantiating class: " + c.getName());
@@ -226,6 +233,10 @@ public class ResolverFactory
 				crunchers++;
 			}
 			catch (InstantiationException ex)
+			{
+
+			}
+			catch (NoClassDefFoundError e)
 			{
 
 			}
@@ -259,6 +270,10 @@ public class ResolverFactory
 				scripters++;
 			}
 			catch (InstantiationException ex)
+			{
+
+			}
+			catch (NoClassDefFoundError e)
 			{
 
 			}
