@@ -128,6 +128,7 @@ public abstract class Cruncher implements Resolvable, Cloneable
 
 	protected Object resolveAChild(String key, Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
+		if (c.shouldAbort()) return null;
 		try
 		{
 			Object o = get(key);

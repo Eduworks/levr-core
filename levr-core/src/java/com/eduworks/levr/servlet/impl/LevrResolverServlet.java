@@ -305,7 +305,7 @@ public class LevrResolverServlet extends LevrServlet
 			}
 		else
 		{
-			Context c = new Context(request);
+			Context c = new Context(request,response,pw);
 			try
 			{
 				execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
@@ -402,7 +402,7 @@ public class LevrResolverServlet extends LevrServlet
 			{
 				final EwJsonCollection json = EwJson.tryConvert(result);
 
-				if (response != null && request != null)
+				if (response != null && request != null && !response.isCommitted())
 				{
 					if (((String) result).startsWith("<html>"))
 						response.setContentType("text/html");
@@ -418,13 +418,13 @@ public class LevrResolverServlet extends LevrServlet
 			}
 			else if (result instanceof Number)
 			{
-				if (response != null)
+				if (response != null && !response.isCommitted())
 					response.setContentType("text/plain");
 				pw.println(result.toString());
 			}
 			else if (result instanceof EwJsonSerializable)
 			{
-				if (response != null)
+				if (response != null && !response.isCommitted())
 					response.setContentType("text/plain");
 				pw.println(((EwJsonSerializable) result).toJsonObject());
 			}
@@ -432,7 +432,7 @@ public class LevrResolverServlet extends LevrServlet
 			{
 				InMemoryFile f = (InMemoryFile) result;
 
-				if (response != null)
+				if (response != null && !response.isCommitted())
 				{
 					response.setContentType(((InMemoryFile) result).mime);
 					if (f.name != null && !f.name.isEmpty())

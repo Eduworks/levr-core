@@ -604,6 +604,7 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 	protected static Object resolveAChild(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolvable thing)
 			throws JSONException
 	{
+		if (c.shouldAbort()) return null;
 		if (thing instanceof Resolver)
 			return resolveAChildR(c,parameters, dataStreams, key, (Resolver) thing);
 		if (thing instanceof Cruncher)
