@@ -49,6 +49,8 @@ public class Context extends ConcurrentHashMap<String, Object>
 
 	public synchronized Object put(String s, Object o)
 	{
+		if (o == null)
+			return remove(s);
 		return super.put(s, o);
 	}
 
