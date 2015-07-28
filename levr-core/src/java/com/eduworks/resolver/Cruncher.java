@@ -179,6 +179,7 @@ public abstract class Cruncher implements Resolvable, Cloneable
 	{
 		if (data.get(key) != null)
 			if (data.get(key) instanceof String)
+				if (data.get(key).toString().length()>1)
 				return ((String) data.get(key)).startsWith("@");
 		return false;
 	}
