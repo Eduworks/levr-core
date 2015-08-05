@@ -100,10 +100,11 @@ public abstract class LevrServlet extends HttpServlet
 				outputStream.print(this.getServletUsage());
 				return;
 			}
-
+			
 			response.setHeader("Access-Control-Allow-Origin", "*");
-			response.setHeader("Access-Control-Allow-Methods", "GET, POST");
-			response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+			response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
+			response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description");
+
 		}
 		catch (Throwable e)
 		{

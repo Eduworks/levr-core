@@ -58,6 +58,7 @@ public class LevrResolverServlet extends LevrServlet
 	static long lastModified = 0;
 	public static long lastChecked = 0;
 	private static String embeddedCode = "";
+	public static Object lock = new Object();
 
 	public static void setEmbeddedCode(String code)
 	{
@@ -79,7 +80,6 @@ public class LevrResolverServlet extends LevrServlet
 
 	public static boolean initConfig(PrintStream pw) throws IOException
 	{
-
 		if (lastChecked + 5000 < System.currentTimeMillis())
 		{
 			lastChecked = System.currentTimeMillis();
@@ -88,21 +88,24 @@ public class LevrResolverServlet extends LevrServlet
 				FileReader input = null;
 				try
 				{
-					config = new JSONObject();
-					functions = new JSONObject();
+					synchronized (lock)
+					{
+						config = new JSONObject();
+						functions = new JSONObject();
 
-					codeFiles = new EwList<File>();
+						codeFiles = new EwList<File>();
 
-					String embeddedName = "commands";
-					JSONObject scriptPack = new JSONObject();
-					scriptPack.put("function", "javascript");
-					scriptPack.put("expression", embeddedCode);
-					Map<String, JSONObject> scriptStreams = new EwMap<String, JSONObject>();
-					scriptStreams.put(embeddedName, scriptPack);
-					mergeInto(config, scriptStreams);
+						String embeddedName = "commands";
+						JSONObject scriptPack = new JSONObject();
+						scriptPack.put("function", "javascript");
+						scriptPack.put("expression", embeddedCode);
+						Map<String, JSONObject> scriptStreams = new EwMap<String, JSONObject>();
+						scriptStreams.put(embeddedName, scriptPack);
+						mergeInto(config, scriptStreams);
 
-					loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
+						loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
 
+					}
 					for (String webService : EwJson.getKeys(functions))
 					{
 						if (webService.toLowerCase().endsWith("autoexecute"))
@@ -285,7 +288,7 @@ public class LevrResolverServlet extends LevrServlet
 
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
-		response.setHeader("Access-Control-Allow-Headers", "Content-Type, Content-Range, Content-Disposition, Content-Description");
+		response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description");
 
 		if (!isPost && !jsonpSecurityKey.isEmpty())
 			try
@@ -305,7 +308,7 @@ public class LevrResolverServlet extends LevrServlet
 			}
 		else
 		{
-			Context c = new Context(request,response,pw);
+			Context c = new Context(request, response, pw);
 			try
 			{
 				execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
@@ -475,7 +478,7 @@ public class LevrResolverServlet extends LevrServlet
 		long ms = System.currentTimeMillis();
 		Object result = resolver.resolve(c, parameterMap, dataStreams);
 		if (noisy)
-			log.info("Response ("+(System.currentTimeMillis()-ms)+"ms): " + requestString + toString(parameterMap));
+			log.info("Response (" + (System.currentTimeMillis() - ms) + "ms): " + requestString + toString(parameterMap));
 		return result;
 	}
 
@@ -494,10 +497,14 @@ public class LevrResolverServlet extends LevrServlet
 		if (requestString.equals(""))
 			requestString = oldRequestString;
 		parameterMap.put("urlRemainder", new String[] { paramString });
-		JSONObject jsonObject = config.optJSONObject(requestString);
-		if (useFunctions && jsonObject == null)
+		JSONObject jsonObject=null;
+		synchronized (lock)
 		{
-			jsonObject = functions.getJSONObject(requestString);
+			jsonObject = config.optJSONObject(requestString);
+			if (useFunctions && jsonObject == null)
+			{
+				jsonObject = functions.getJSONObject(requestString);
+			}
 		}
 		if (jsonObject == null)
 			throw new RuntimeException("Service does not exist: " + requestString);
