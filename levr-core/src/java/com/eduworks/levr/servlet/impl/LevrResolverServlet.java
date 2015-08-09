@@ -246,12 +246,18 @@ public class LevrResolverServlet extends LevrServlet
 		Map<String, String[]> parameterMap = Collections.synchronizedMap(new HashMap<String, String[]>(request.getParameterMap()));
 		String jsonpSecurityKey = getStringFromParameter(request, "sec", "");
 		Map<String, InputStream> dataStreams = null;
+		
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		PrintStream pw = new PrintStream(outputStream);
+
+		Context c = new Context(request, response, pw);
+		
 		if (isPost)
 			if (ServletFileUpload.isMultipartContent(request))
 			{
 				try
 				{
-					dataStreams = decodeMultipartContent(request);
+					dataStreams = decodeMultipartContent(c,request);
 				}
 				catch (FileUploadException e)
 				{
@@ -269,10 +275,7 @@ public class LevrResolverServlet extends LevrServlet
 					throw new IOException(e.getMessage());
 				}
 			}
-
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		PrintStream pw = new PrintStream(outputStream);
-
+		
 		if (isPost && !jsonpSecurityKey.isEmpty())
 			pw = new PrintStream(os);
 		else
@@ -300,7 +303,6 @@ public class LevrResolverServlet extends LevrServlet
 			}
 		else
 		{
-			Context c = new Context(request, response, pw);
 			try
 			{
 				execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
@@ -338,7 +340,7 @@ public class LevrResolverServlet extends LevrServlet
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, InputStream> decodeMultipartContent(HttpServletRequest request) throws FileUploadException, IOException
+	private Map<String, InputStream> decodeMultipartContent(Context c, HttpServletRequest request) throws FileUploadException, IOException
 	{
 		LinkedHashMap<String, InputStream> results = new LinkedHashMap<String, InputStream>();
 		FileItemFactory factory = new DiskFileItemFactory();
@@ -347,6 +349,7 @@ public class LevrResolverServlet extends LevrServlet
 
 		for (FileItem item : parseRequest)
 		{
+			c.filenames.put(item.getFieldName(),item.getName());
 			results.put(item.getFieldName(), new ByteArrayInputStream(IOUtils.toByteArray(item.getInputStream())));
 		}
 		log.debug("Decoded " + results.size() + " multi part mime inputs.");

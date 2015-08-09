@@ -58,6 +58,7 @@ public class Context extends ConcurrentHashMap<String, Object>
 	EwList<ContextEvent> failureEvents = new EwList<ContextEvent>();
 	EwList<ContextEvent> finallyEvents = new EwList<ContextEvent>();
 	EwList<ContextEvent> finalizeEvents = new EwList<ContextEvent>();
+	public EwMap<String,String> filenames = new EwMap<String, String>();
 
 	public void onSuccess(ContextEvent c)
 	{
