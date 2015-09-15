@@ -486,7 +486,7 @@ public class LevrResolverServlet extends LevrServlet
 		while (requestString.contains("/") && requestString.length() > 0 && config.has(requestString) == false
 				&& (!useFunctions || functions.has(requestString)))
 		{
-			paramString += requestString.substring(requestString.lastIndexOf("/"));
+			paramString = requestString.substring(requestString.lastIndexOf("/"))+paramString;
 			requestString = requestString.substring(0, requestString.lastIndexOf("/"));
 		}
 		if (requestString.equals(""))
