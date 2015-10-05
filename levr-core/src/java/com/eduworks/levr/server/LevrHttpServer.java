@@ -1,5 +1,9 @@
 package com.eduworks.levr.server;
 
+import javax.servlet.ServletException;
+import javax.websocket.DeploymentException;
+import javax.websocket.server.ServerContainer;
+
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
@@ -8,11 +12,13 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
-import org.mortbay.jetty.cert.JettyResourceHandler;
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
 import com.eduworks.levr.servlet.LevrServlet;
 import com.eduworks.levr.servlet.impl.LevrResolverServlet;
+import com.eduworks.levr.websocket.LevrResolverWebSocket;
 
 /**
  * This class is meant for developers to be able to run an instance of the LEVR
@@ -31,21 +37,18 @@ public class LevrHttpServer extends Server
 	/** Thread-safe lazy initialization for the singleton instance */
 	private static class LevrHttpServerLoader
 	{
-		private static LevrHttpServer	INSTANCE	= new LevrHttpServer();
+		private static LevrHttpServer INSTANCE = new LevrHttpServer();
 	}
 
 	/*
 	 * This holds the servlets that are available to the JETTY server. Note that
 	 * TOMCAT servlets are recorded in the web/WEB-INF/web.xml.
 	 */
-	private final static LevrServlet[]	DEF_SERVLETS		= new LevrServlet[] {
-			 new LevrResolverServlet()};
+	private final static LevrServlet[] DEF_SERVLETS = new LevrServlet[] { new LevrResolverServlet() };
 
-	protected final static String		SOAP_BIND_ADDR		= "http://localhost:9723/web/ws";
-	protected final static String		DEF_RESOURCE_BASE	= "web";
-	protected final static String		DEF_WELCOME_PAGE	= "index.html";
+	protected final static String SOAP_BIND_ADDR = "http://localhost:9723/web/ws";
 
-	public static final int				DEFAULT_PORT		= 9722;
+	public static final int DEFAULT_PORT = 9722;
 
 	/**
 	 * Activate the server on a specified port (9722 by default).
@@ -65,7 +68,7 @@ public class LevrHttpServer extends Server
 	 * Supports servlet classes extending {@link LevrServlet} for lazy
 	 * initialization
 	 */
-	public static void attach(ServletHandler sh, Class<? extends LevrServlet> servlet)
+	public static void attach(ServletContextHandler sh, Class<? extends LevrServlet> servlet)
 	{
 		try
 		{
@@ -80,21 +83,21 @@ public class LevrHttpServer extends Server
 	 * Multiple paths may be specified in {@link LevrServlet#getServletPath()}
 	 * by separating them with whitespace.
 	 */
-	public static void attach(ServletHandler sh, LevrServlet servlet)
+	public static void attach(ServletContextHandler sh, LevrServlet servlet)
 	{
 		for (String servletPath : servlet.getServletPath().split("\\s+"))
 			if (servletPath != null && servletPath.length() > 0)
-				sh.addServletWithMapping(servlet.getClass(), servletPath);
+				sh.addServlet(servlet.getClass(), servletPath);
 	}
 
 	/**
 	 * Supports Class&lt;{@link LevrServlet}&gt;[] of servlets for lazy
 	 * initialization
 	 */
-	public static void attachAll(ServletHandler sh, Class<? extends LevrServlet>[] array)
+	public static void attachAll(ServletContextHandler sh, Class<? extends LevrServlet>[] levrServlets)
 	{
-		if (array != null)
-			for (Class<? extends LevrServlet> servlet : array)
+		if (levrServlets != null)
+			for (Class<? extends LevrServlet> servlet : levrServlets)
 				LevrHttpServer.attach(sh, servlet);
 	}
 
@@ -102,7 +105,7 @@ public class LevrHttpServer extends Server
 	 * Supports Class&lt;{@link LevrServlet}&gt;[] of servlets for lazy
 	 * initialization
 	 */
-	public static void attachAll(ServletHandler sh, LevrServlet[] array)
+	public static void attachAll(ServletContextHandler sh, LevrServlet[] array)
 	{
 		if (array != null)
 			for (LevrServlet servlet : array)
@@ -130,6 +133,7 @@ public class LevrHttpServer extends Server
 		// This always fails if called implicitly by child constructor
 		if (this.getClass() == LevrHttpServer.class && LevrHttpServerLoader.INSTANCE != null)
 			throw new IllegalStateException("Already instantiated");
+
 	}
 
 	/**
@@ -144,7 +148,7 @@ public class LevrHttpServer extends Server
 	 */
 	public void setupMetadataServer(int port, Class<? extends LevrServlet>... servletClasses)
 	{
-		setupMetadataServer(port, SOAP_BIND_ADDR, DEF_RESOURCE_BASE, new String[] { DEF_WELCOME_PAGE }, servletClasses);
+		setupMetadataServer(port, SOAP_BIND_ADDR, servletClasses);
 	}
 
 	/**
@@ -165,24 +169,33 @@ public class LevrHttpServer extends Server
 	 *            {@link ServletHandler}
 	 * @throws Exception
 	 */
-	protected void setupMetadataServer(int port, String soapAddress, String resourceBase, String[] welcomePages,
-			Class<? extends LevrServlet>... servletClasses)
+	protected void setupMetadataServer(int port, String soapAddress, Class<? extends LevrServlet>... servletClasses)
 	{
 		ServerConnector connector = new ServerConnector(this);
 		connector.setPort(port);
-//		connector.setIdleTimeout(Long.MAX_VALUE);
 		setConnectors(new Connector[] { connector });
 
-		ServletHandler sh = new ServletHandler();
+		ServletContextHandler sh = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		try
+		{
+			sh.setServer(this);
+			ServerContainer wsContainer = WebSocketServerContainerInitializer.configureContext(sh);
+			wsContainer.addEndpoint(LevrResolverWebSocket.class);
+		}
+		catch (DeploymentException e)
+		{
+			e.printStackTrace();
+		}
+		catch (ServletException e)
+		{
+			e.printStackTrace();
+		}
+
 		LevrHttpServer.attachAll(sh, LevrHttpServer.getServlets());
 		LevrHttpServer.attachAll(sh, servletClasses);
 
-		JettyResourceHandler rh = new JettyResourceHandler();
-		rh.setResourceBase(resourceBase);
-		rh.setWelcomeFiles(welcomePages);
-
 		HandlerCollection handlers = new HandlerCollection();
-		handlers.setHandlers(new Handler[] { sh, rh, new ContextHandlerCollection(), new DefaultHandler() });
+		handlers.setHandlers(new Handler[] { sh, new ContextHandlerCollection(), new DefaultHandler() });
 		setHandler(handlers);
 	}
 

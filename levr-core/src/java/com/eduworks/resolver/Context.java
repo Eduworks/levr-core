@@ -34,6 +34,19 @@ public class Context extends ConcurrentHashMap<String, Object>
 		this.pw = pw;
 	}
 
+	public Context(Context c)
+	{
+		super(c);
+		request=c.request;
+		response=c.response;
+		pw=c.pw;
+		successEvents = c.successEvents;
+		failureEvents = c.failureEvents;
+		finallyEvents = c.finallyEvents;
+		finalizeEvents = c.finalizeEvents;
+		filenames = c.filenames;
+	}
+
 	@Override
 	protected void finalize() throws Throwable
 	{
