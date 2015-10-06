@@ -7,8 +7,6 @@
    <extends organisation="com.eduworks" module="eduworks-common" revision="latest.integration" location="../eduworks-common/ivy.xml" extendType="configurations,dependencies"/>
   </info>
   <dependencies>
-    <dependency org="javax.websocket" name="javax.websocket-api" rev="1.0"/>
-      
 	<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0"/>
 	
   	<dependency org="commons-fileupload" name="commons-fileupload" rev="1.2.1"/>
