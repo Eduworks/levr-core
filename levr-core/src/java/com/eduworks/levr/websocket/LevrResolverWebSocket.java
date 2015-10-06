@@ -9,7 +9,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-@ServerEndpoint("/ws/custom")
+@ServerEndpoint(value = "/ws/custom")
 public class LevrResolverWebSocket
 {
 	public LevrResolverWebSocket()
