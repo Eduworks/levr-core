@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.eclipse.jetty.server.Request;
 
 import com.eduworks.levr.servlet.impl.LevrResolverServlet;
 
@@ -221,10 +220,6 @@ public abstract class LevrServlet extends HttpServlet
 
 	private void closeOutputStream(HttpServletRequest request, ServletOutputStream outputStream) throws IOException
 	{
-		// If not yet handled, the OutputStream should not be closed
-		if (request instanceof Request && !((Request) request).isHandled())
-			return;
-
 		outputStream.close();
 	}
 

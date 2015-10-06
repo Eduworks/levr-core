@@ -2,7 +2,7 @@
 <ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
   <info
    organisation="com.eduworks"
-   module="levr-core"
+   module="levr-core-dev"
    status="integration">
    <extends organisation="com.eduworks" module="eduworks-common" revision="latest.integration" location="../eduworks-common/ivy.xml" extendType="configurations,dependencies"/>
   </info>
