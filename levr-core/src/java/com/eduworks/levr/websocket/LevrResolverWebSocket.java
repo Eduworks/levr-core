@@ -13,7 +13,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
-import org.apache.jena.atlas.json.JSON;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,8 +20,6 @@ import org.json.JSONObject;
 
 import com.eduworks.interfaces.EwJsonSerializable;
 import com.eduworks.lang.EwList;
-import com.eduworks.lang.json.EwJsonCollection;
-import com.eduworks.lang.json.impl.EwJsonArray;
 import com.eduworks.lang.util.EwJson;
 import com.eduworks.levr.servlet.impl.LevrResolverServlet;
 import com.eduworks.resolver.Context;
