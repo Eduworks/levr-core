@@ -286,9 +286,9 @@ public class ResolverFactory
 		}
 		System.out.println(scripters + " Scripters.");
 		System.out.println("Free Memory - " + ((Runtime.getRuntime().freeMemory() / 1024) / 1024));
-		System.out.println("Max Memory - " + ((Runtime.getRuntime().maxMemory() / 1024) / 1024));
 		System.out.println("Total Memory - " + ((Runtime.getRuntime().totalMemory() / 1024) / 1024));
-		System.out.println("Available CPU - " + ((Runtime.getRuntime().availableProcessors() / 1024) / 1024));
+		System.out.println("Max Memory - " + ((Runtime.getRuntime().maxMemory() / 1024) / 1024));
+		System.out.println("Available CPU - " + (Runtime.getRuntime().availableProcessors()));
 	}
 
 	private static Resolvable getCorrectResolver(String name) throws JSONException
