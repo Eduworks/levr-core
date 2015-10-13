@@ -135,73 +135,75 @@ public class LevrResolverServlet extends LevrServlet
 
 	public static void loadAdditionalConfigFiles(File f) throws JSONException
 	{
-		if (f.isDirectory())
-			for (File f2 : f.listFiles())
-				loadAdditionalConfigFiles(f2);
-		else if (f.isFile())
-		{
-			FileInputStream fileHandle = null;
-			try
+		if (f.canRead()) {
+			if (f.isDirectory())
+				for (File f2 : f.listFiles())
+					loadAdditionalConfigFiles(f2);
+			else if (f.isFile())
 			{
-				if (f.getName().endsWith(".rsl"))
+				FileInputStream fileHandle = null;
+				try
 				{
-					log.debug("Loading: " + f.getPath());
-					codeFiles.add(f);
-					mergeInto(config, LevrResolverParser.decodeStreams(f));
-					lastModified = Math.max(f.lastModified(), lastModified);
+					if (f.getName().endsWith(".rsl"))
+					{
+						log.debug("Loading: " + f.getPath());
+						codeFiles.add(f);
+						mergeInto(config, LevrResolverParser.decodeStreams(f));
+						lastModified = Math.max(f.lastModified(), lastModified);
+					}
+					if (f.getName().endsWith(".rs2"))
+					{
+						log.debug("Loading: " + f.getPath());
+						codeFiles.add(f);
+						mergeInto(config, functions, LevrResolverV2Parser.decodeStreams(f));
+						lastModified = Math.max(f.lastModified(), lastModified);
+					}
+					JSONObject scriptPack = null;
+					Map<String, JSONObject> scriptStreams = null;
+					if (f.getName().endsWith(".psl"))
+					{
+						log.debug("Loading: " + f.getPath());
+						codeFiles.add(f);
+						fileHandle = new FileInputStream(f);
+						String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
+						scriptPack = new JSONObject();
+						scriptPack.put("function", "python");
+						scriptPack.put("expression", IOUtils.toString(fileHandle));
+						scriptStreams = new EwMap<String, JSONObject>();
+						scriptStreams.put(cleanFilename, scriptPack);
+						mergeInto(config, scriptStreams);
+						lastModified = Math.max(f.lastModified(), lastModified);
+					}
+					if (f.getName().endsWith(".jsl"))
+					{
+						log.debug("Loading: " + f.getPath());
+						codeFiles.add(f);
+						fileHandle = new FileInputStream(f);
+						String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
+						scriptPack = new JSONObject();
+						scriptPack.put("function", "javascript");
+						scriptPack.put("expression", IOUtils.toString(fileHandle));
+						scriptStreams = new EwMap<String, JSONObject>();
+						scriptStreams.put(cleanFilename, scriptPack);
+						mergeInto(config, scriptStreams);
+						lastModified = Math.max(f.lastModified(), lastModified);
+					}
 				}
-				if (f.getName().endsWith(".rs2"))
+				catch (NullPointerException ex)
 				{
-					log.debug("Loading: " + f.getPath());
-					codeFiles.add(f);
-					mergeInto(config, functions, LevrResolverV2Parser.decodeStreams(f));
-					lastModified = Math.max(f.lastModified(), lastModified);
+					System.out.println("Failed on " + f.getPath());
+					ex.printStackTrace();
 				}
-				JSONObject scriptPack = null;
-				Map<String, JSONObject> scriptStreams = null;
-				if (f.getName().endsWith(".psl"))
+				catch (IOException e)
 				{
-					log.debug("Loading: " + f.getPath());
-					codeFiles.add(f);
-					fileHandle = new FileInputStream(f);
-					String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
-					scriptPack = new JSONObject();
-					scriptPack.put("function", "python");
-					scriptPack.put("expression", IOUtils.toString(fileHandle));
-					scriptStreams = new EwMap<String, JSONObject>();
-					scriptStreams.put(cleanFilename, scriptPack);
-					mergeInto(config, scriptStreams);
-					lastModified = Math.max(f.lastModified(), lastModified);
+					System.out.println("Failed on " + f.getPath());
+					e.printStackTrace();
 				}
-				if (f.getName().endsWith(".jsl"))
+				finally
 				{
-					log.debug("Loading: " + f.getPath());
-					codeFiles.add(f);
-					fileHandle = new FileInputStream(f);
-					String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
-					scriptPack = new JSONObject();
-					scriptPack.put("function", "javascript");
-					scriptPack.put("expression", IOUtils.toString(fileHandle));
-					scriptStreams = new EwMap<String, JSONObject>();
-					scriptStreams.put(cleanFilename, scriptPack);
-					mergeInto(config, scriptStreams);
-					lastModified = Math.max(f.lastModified(), lastModified);
+					if (fileHandle != null)
+						IOUtils.closeQuietly(fileHandle);
 				}
-			}
-			catch (NullPointerException ex)
-			{
-				System.out.println("Failed on " + f.getPath());
-				ex.printStackTrace();
-			}
-			catch (IOException e)
-			{
-				System.out.println("Failed on " + f.getPath());
-				e.printStackTrace();
-			}
-			finally
-			{
-				if (fileHandle != null)
-					IOUtils.closeQuietly(fileHandle);
 			}
 		}
 	}
@@ -511,25 +513,27 @@ public class LevrResolverServlet extends LevrServlet
 		long lmodified = 0;
 		for (File f : dir.listFiles())
 		{
-			if (f.isDirectory())
-				lmodified = Math.max(lmodified, getFilesLastModified(f));
-			else if (f.isFile())
-			{
-				if (f.getName().endsWith(".rsl"))
+			if (f.canRead()) {
+				if (f.isDirectory())
+					lmodified = Math.max(lmodified, getFilesLastModified(f));
+				else if (f.isFile())
 				{
-					lmodified = Math.max(f.lastModified(), lmodified);
-				}
-				if (f.getName().endsWith(".rs2"))
-				{
-					lmodified = Math.max(f.lastModified(), lmodified);
-				}
-				if (f.getName().endsWith(".psl"))
-				{
-					lmodified = Math.max(f.lastModified(), lmodified);
-				}
-				if (f.getName().endsWith(".jsl"))
-				{
-					lmodified = Math.max(f.lastModified(), lmodified);
+					if (f.getName().endsWith(".rsl"))
+					{
+						lmodified = Math.max(f.lastModified(), lmodified);
+					}
+					if (f.getName().endsWith(".rs2"))
+					{
+						lmodified = Math.max(f.lastModified(), lmodified);
+					}
+					if (f.getName().endsWith(".psl"))
+					{
+						lmodified = Math.max(f.lastModified(), lmodified);
+					}
+					if (f.getName().endsWith(".jsl"))
+					{
+						lmodified = Math.max(f.lastModified(), lmodified);
+					}
 				}
 			}
 		}
