@@ -126,8 +126,6 @@ public class ResolverFactory
 				e.printStackTrace();
 			}
 
-		if (!obj.has("function"))
-			return obj.toString();
 		if (r == null)
 			r = getCorrectResolver(obj.getString("function"));
 
