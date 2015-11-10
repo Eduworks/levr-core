@@ -179,6 +179,7 @@ public class LevrHttpServer extends Server
 		try
 		{
 			sh.setServer(this);
+			sh.setStopTimeout(Long.MAX_VALUE);
 			ServerContainer wsContainer = WebSocketServerContainerInitializer.configureContext(sh);
 			wsContainer.addEndpoint(LevrResolverWebSocket.class);
 		}
