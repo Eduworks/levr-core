@@ -3,6 +3,8 @@ package com.eduworks.resolver;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -420,7 +422,14 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 			return Double.parseDouble(l.get(0).toString());
 		}
 		else if (o instanceof String)
-			return Double.parseDouble(o.toString());
+			try
+			{
+				return NumberFormat.getNumberInstance(java.util.Locale.US).parse((String) o).doubleValue();
+			}
+			catch (ParseException e)
+			{
+				return Double.parseDouble((String) o);
+			}
 		else if (o instanceof Resolver)
 		{
 			Resolver obj = (Resolver) o;
@@ -567,21 +576,22 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 		return has(parameters, key) && Arrays.asList(parameters.get(key)).contains(value);
 	}
 
-	public void resolveAllChildren(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public void resolveAllChildren(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		resolveAllChildren(c,this, parameters, dataStreams);
+		resolveAllChildren(c, this, parameters, dataStreams);
 	}
 
-	public static void resolveAllChildren(Context c,JSONObject settings, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public static void resolveAllChildren(Context c, JSONObject settings, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
+			throws JSONException
 	{
 		@SuppressWarnings("unchecked")
 		final Iterator<String> keys = settings.sortedKeys();
 
 		while (keys.hasNext())
-			resolveAChild(c,settings, parameters, dataStreams, keys.next());
+			resolveAChild(c, settings, parameters, dataStreams, keys.next());
 	}
 
-	protected static void resolveAChild(Context c,JSONObject settings, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key)
+	protected static void resolveAChild(Context c, JSONObject settings, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key)
 			throws JSONException
 	{
 		Object o = null;
@@ -592,29 +602,30 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 		if (o instanceof Resolvable)
 		{
 			Resolvable resolver = (Resolvable) o;
-			settings.put(key, resolveAChild(c,parameters, dataStreams, key, resolver));
+			settings.put(key, resolveAChild(c, parameters, dataStreams, key, resolver));
 		}
 	}
 
-	protected void resolveAChild(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key) throws JSONException
+	protected void resolveAChild(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key) throws JSONException
 	{
-		resolveAChild(c,this, parameters, dataStreams, key);
+		resolveAChild(c, this, parameters, dataStreams, key);
 	}
 
-	protected static Object resolveAChild(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolvable thing)
+	protected static Object resolveAChild(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolvable thing)
 			throws JSONException
 	{
-		if (c.shouldAbort()) return null;
+		if (c.shouldAbort())
+			return null;
 		if (thing instanceof Resolver)
-			return resolveAChildR(c,parameters, dataStreams, key, (Resolver) thing);
+			return resolveAChildR(c, parameters, dataStreams, key, (Resolver) thing);
 		if (thing instanceof Cruncher)
-			return resolveAChildC(c,parameters, dataStreams, key, (Cruncher) thing);
+			return resolveAChildC(c, parameters, dataStreams, key, (Cruncher) thing);
 		if (thing instanceof Scripter)
-			return resolveAChildS(c,parameters, dataStreams, key, (Scripter) thing);
+			return resolveAChildS(c, parameters, dataStreams, key, (Scripter) thing);
 		throw new RuntimeException("Don't understand how to resolve " + thing);
 	}
 
-	protected static Object resolveAChildR(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolver resolver)
+	protected static Object resolveAChildR(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolver resolver)
 			throws JSONException
 	{
 		String shortName = resolver.getClass().getSimpleName().replace("Resolver", "");
@@ -636,7 +647,7 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 		}
 	}
 
-	protected static Object resolveAChildC(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Cruncher resolver)
+	protected static Object resolveAChildC(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Cruncher resolver)
 			throws JSONException
 	{
 		try
@@ -650,7 +661,7 @@ public abstract class Resolver extends EwJsonObject implements Cloneable, Resolv
 		}
 	}
 
-	protected static Object resolveAChildS(Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Scripter resolver)
+	protected static Object resolveAChildS(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Scripter resolver)
 			throws JSONException
 	{
 		try

@@ -1,6 +1,8 @@
 package com.eduworks.resolver;
 
 import java.io.InputStream;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -211,7 +213,16 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		if (obj instanceof Double)
 			return (Double) obj;
 		else
-			return Double.parseDouble((String) obj);
+		{
+			try
+			{
+				return NumberFormat.getNumberInstance(java.util.Locale.US).parse((String)obj).doubleValue();
+			}
+			catch (ParseException e)
+			{
+				return Double.parseDouble((String) obj);
+			}
+		}
 	}
 
 	public Double optAsDouble(String key, double defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
