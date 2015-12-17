@@ -225,7 +225,10 @@ public abstract class LevrServlet extends HttpServlet
 
 	private void handleException(HttpServletResponse response, ServletOutputStream outputStream, Throwable e) throws IOException
 	{
-		response.setStatus(500);
+		if (e instanceof HttpErrorException)
+			response.setStatus(((HttpErrorException) e).httpStatus);
+		else
+			response.setStatus(500);
 		e.printStackTrace();
 		if (outputStream != null)
 		{
