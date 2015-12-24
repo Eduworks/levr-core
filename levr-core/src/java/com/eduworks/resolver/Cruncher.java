@@ -291,6 +291,11 @@ public abstract class Cruncher implements Resolvable, Cloneable
 			return Resolver.getParameter(data.get(key).toString().substring(1), parameters);
 		return get(key, c, parameters, dataStreams);
 	}
+	protected String getObjAsString(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	{
+		String key = "obj";
+		return getAsString(key, c, parameters, dataStreams);
+	}
 
 	protected JSONArray getObjAsJsonArray(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
