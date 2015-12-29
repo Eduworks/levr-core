@@ -179,7 +179,8 @@ public abstract class Cruncher implements Resolvable, Cloneable
 
 	protected boolean hasParam(String key)
 	{
-		if (data.get(key) != null)
+		if (data != null)
+		if (data.containsKey(key))
 			if (data.get(key) instanceof String)
 				if (data.get(key).toString().length()>1)
 				return ((String) data.get(key)).startsWith("@");
