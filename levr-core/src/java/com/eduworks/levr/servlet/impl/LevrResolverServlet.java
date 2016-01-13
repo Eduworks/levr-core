@@ -59,6 +59,8 @@ public class LevrResolverServlet extends LevrServlet
 	public static long lastChecked = 0;
 	private static String embeddedCode = "";
 	public static Object lock = new Object();
+	
+	private static final String FAVICON_REQUEST_STRING = "favicon.ico"; 	      
 
 	public static void setEmbeddedCode(String code)
 	{
@@ -245,6 +247,7 @@ public class LevrResolverServlet extends LevrServlet
 	{
 		String requestURI = request.getRequestURI();
 		String requestString = requestURI.substring(requestURI.indexOf(getServletPathExample()) + getServletPathExample().length());
+		if (requestString.toLowerCase().endsWith(FAVICON_REQUEST_STRING.toLowerCase())) return;
 		Map<String, String[]> parameterMap = Collections.synchronizedMap(new HashMap<String, String[]>(request.getParameterMap()));
 		String jsonpSecurityKey = getStringFromParameter(request, "sec", "");
 		Map<String, InputStream> dataStreams = null;
@@ -358,7 +361,7 @@ public class LevrResolverServlet extends LevrServlet
 		return results;
 	}
 
-	@SuppressWarnings("unchecked")
+	//@SuppressWarnings("unchecked")
 	private Map<String, InputStream> decodeSimpleContent(HttpServletRequest request) throws FileUploadException, IOException
 	{
 		LinkedHashMap<String, InputStream> results = new LinkedHashMap<String, InputStream>();
