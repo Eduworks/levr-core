@@ -26,14 +26,13 @@ import com.google.common.base.Predicate;
 
 public class ResolverFactory
 {
-	public static Map<String, Class<? extends Resolver>> factorySpecs = null;
 	public static Map<String, Class<? extends Cruncher>> cruncherSpecs = null;
 	public static Map<String, Class<? extends Scripter>> scripterSpecs = null;
 
 	// static { populateFactorySpecsDynamically(); }
 
 	/** Cast or parse object as JSON object, or return the object */
-	public static Object cast(Object o) throws JSONException
+	private static Object cast(Object o) throws JSONException
 	{
 		JSONArray ja = EwJson.getInstanceOfJsonArray(o);
 		if (ja != null)
@@ -49,30 +48,7 @@ public class ResolverFactory
 		return o;
 	}
 
-	public static Object create(Scripter s) throws JSONException
-	{
-		Resolvable r = null;
-		if (s instanceof Resolvable)
-			try
-			{
-				r = (Resolvable) s.getClass().newInstance();
-			}
-			catch (InstantiationException e)
-			{
-				e.printStackTrace();
-			}
-			catch (IllegalAccessException e)
-			{
-				e.printStackTrace();
-			}
-		for (String key : s.keySet())
-		{
-			r.build(key, cast(s.get(key)));
-		}
-		return r;
-	}
-
-	public static Object create(JSONArray array) throws JSONException
+	private static Object create(JSONArray array) throws JSONException
 	{
 		if (array.length() == 0)
 			return new EwJsonArray();
@@ -84,47 +60,15 @@ public class ResolverFactory
 		return ja;
 	}
 
-	public static Object create(Cruncher c) throws JSONException
+	private static Object create(Cruncher c) throws JSONException
 	{
-		Resolvable r = null;
-		if (c instanceof Resolvable)
-			try
-			{
-				r = (Resolvable) c.getClass().newInstance();
-			}
-			catch (InstantiationException e)
-			{
-				e.printStackTrace();
-			}
-			catch (IllegalAccessException e)
-			{
-				e.printStackTrace();
-			}
-		for (String key : c.keySet())
-		{
-			r.build(key, cast(c.get(key)));
-		}
-		return r;
+		return c;
 	}
 
 	@SuppressWarnings("rawtypes")
-	public static Object create(JSONObject obj) throws JSONException
+	public static Resolvable create(JSONObject obj) throws JSONException
 	{
-
 		Resolvable r = null;
-		if (obj instanceof Resolvable)
-			try
-			{
-				r = (Resolvable) obj.getClass().newInstance();
-			}
-			catch (InstantiationException e)
-			{
-				e.printStackTrace();
-			}
-			catch (IllegalAccessException e)
-			{
-				e.printStackTrace();
-			}
 
 		if (r == null)
 			r = getCorrectResolver(obj.getString("function"));
@@ -144,22 +88,24 @@ public class ResolverFactory
 
 	public static synchronized void populateFactorySpecsDynamically()
 	{
-		if (factorySpecs != null)
+		if (cruncherSpecs != null)
 			return;
 		Collection<URL> urlsForCurrentClasspath = ClasspathHelper.forManifest();
 		urlsForCurrentClasspath.addAll(ClasspathHelper.forJavaClassPath());
 		urlsForCurrentClasspath.addAll(ClasspathHelper.forClassLoader());
 		EwSet<URL> urls = new EwSet<URL>();
 		for (URL url : urlsForCurrentClasspath)
+		{
 			if (!url.toString().contains("icu4j"))
 				urls.add(url);
+		}
 		System.out.println(urls.toString());
 		System.out.println("We are now going to scan for any Resolvers, Crunchers, or Scripters.");
 		List<ClassLoader> classLoadersList = new ArrayList<ClassLoader>();
 		classLoadersList.add(ClasspathHelper.contextClassLoader());
 		classLoadersList.add(ClasspathHelper.staticClassLoader());
-		Reflections reflections = new Reflections(new ConfigurationBuilder().addClassLoaders(classLoadersList).setUrls(urls).setScanners(new SubTypesScanner(),
-				new TypeAnnotationsScanner().filterResultsBy(new Predicate<String>()
+		Reflections reflections = new Reflections(new ConfigurationBuilder().addClassLoaders(classLoadersList).setUrls(urls)
+				.setScanners(new SubTypesScanner(), new TypeAnnotationsScanner().filterResultsBy(new Predicate<String>()
 				{
 					@Override
 					public boolean apply(String input)
@@ -176,41 +122,7 @@ public class ResolverFactory
 					}
 				}), new ResourcesScanner()));
 		System.out.println("Finished Scanning. Getting subtypes and initializing classes.");
-		Set<Class<? extends Resolver>> subTypesOf = reflections.getSubTypesOf(Resolver.class);
-		factorySpecs = new EwMap<String, Class<? extends Resolver>>();
-
-		int resolvers = 0, crunchers = 0, scripters = 0;
-		for (Class<? extends Resolver> c : subTypesOf)
-		{
-			try
-			{
-				Resolver newInstance = c.newInstance();
-				for (String s : newInstance.getResolverNames())
-				{
-					factorySpecs.put(s, c);
-					// System.out.println(s + " -> " + c.getName());
-				}
-				resolvers++;
-			}
-			catch (InstantiationException ex)
-			{
-
-			}
-			catch (IllegalAccessException e)
-			{
-
-			}
-			catch (NoClassDefFoundError e)
-			{
-
-			}
-			catch (NullPointerException e)
-			{
-				System.out.println("Error instantiating class: " + c.getName());
-			}
-		}
-		System.out.println(resolvers + " Resolvers.");
-
+		int crunchers = 0, scripters = 0;
 		Set<Class<? extends Cruncher>> csubTypesOf = reflections.getSubTypesOf(Cruncher.class);
 		cruncherSpecs = new EwMap<String, Class<? extends Cruncher>>();
 
@@ -221,28 +133,26 @@ public class ResolverFactory
 				Cruncher newInstance = c.newInstance();
 				for (String s : newInstance.getResolverNames())
 				{
-					if (factorySpecs.containsKey(s))
-					{
-						// System.out.println("Conflict: Resolver exists for " +
-						// s + ", it must be accessed with the 'c' prefix.");
-						break;
-					}
-					// System.out.println(s + " -> " + c.getName());
+					if (cruncherSpecs.containsKey(s))
+						System.out.println("Duplicate Cruncher Found: " + s);
 					cruncherSpecs.put(s, c);
 				}
 				crunchers++;
 			}
 			catch (InstantiationException ex)
 			{
-
 			}
 			catch (NoClassDefFoundError e)
 			{
-
+				e.printStackTrace();
 			}
 			catch (IllegalAccessException e)
 			{
-
+				e.printStackTrace();
+			}
+			catch (Throwable t)
+			{
+				t.printStackTrace();
 			}
 		}
 
@@ -258,13 +168,6 @@ public class ResolverFactory
 				Scripter newInstance = s.newInstance();
 				for (String key : newInstance.getResolverNames())
 				{
-					if (factorySpecs.containsKey(key))
-					{
-						// System.out.println("Conflict: Resolver exists for " +
-						// key + ", it must be accessed with the 's' prefix.");
-						break;
-					}
-					// System.out.println(key + " -> " + s.getName());
 					scripterSpecs.put(key, s);
 				}
 				scripters++;
@@ -291,16 +194,15 @@ public class ResolverFactory
 
 	private static Resolvable getCorrectResolver(String name) throws JSONException
 	{
-		if (factorySpecs == null)
+		if (cruncherSpecs == null)
 			populateFactorySpecsDynamically();
 
-		Class<? extends Resolver> c = factorySpecs.get(name);
 		Class<? extends Cruncher> c2 = cruncherSpecs.get(name);
 		Class<? extends Scripter> s = scripterSpecs.get(name);
 
 		try
 		{
-			if (c == null && c2 == null && s == null)
+			if (c2 == null && s == null)
 			{
 				c2 = cruncherSpecs.get("execute");
 				Cruncher cruncher = c2.newInstance();
@@ -308,15 +210,13 @@ public class ResolverFactory
 				return cruncher;
 			}
 
-			if (c == null && c2 == null && s == null)
+			if (c2 == null && s == null)
 				throw new JSONException("Cannot resolve name: " + name);
 
-			if (c == null)
-				if (c2 == null)
-					return s.newInstance();
-				else
-					return c2.newInstance();
-			return c.newInstance();
+			if (c2 == null)
+				return s.newInstance();
+			else
+				return c2.newInstance();
 		}
 		catch (InstantiationException e)
 		{

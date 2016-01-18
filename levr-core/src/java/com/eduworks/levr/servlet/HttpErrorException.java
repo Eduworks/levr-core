@@ -8,4 +8,9 @@ public class HttpErrorException extends RuntimeException
 	}
 	private static final long serialVersionUID = 1L;
 	public short httpStatus = 500;
+	@Override
+	public String toString()
+	{
+		return this.getMessage();
+	}
 }

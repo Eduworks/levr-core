@@ -137,7 +137,7 @@ public abstract class LevrServlet extends HttpServlet
 	}
 
 	/** @see {@link #crossDomainFix(HttpServletRequest, String)} */
-	protected void crossDomainFixStart(HttpServletRequest request, PrintStream pw)
+	protected void startJsonpPayload(HttpServletRequest request, PrintStream pw)
 	{
 		String callback = getStringFromParameter(request, "callback", "");
 		if (!callback.isEmpty())
@@ -145,7 +145,7 @@ public abstract class LevrServlet extends HttpServlet
 	}
 
 	/** @see {@link #crossDomainFix(HttpServletRequest, String)} */
-	protected void crossDomainFixEnd(HttpServletRequest request, PrintStream pw)
+	protected void finishJsonpPayload(HttpServletRequest request, PrintStream pw)
 	{
 		String callback = getStringFromParameter(request, "callback", "");
 		if (!callback.isEmpty())
@@ -235,15 +235,6 @@ public abstract class LevrServlet extends HttpServlet
 			outputStream.println(e.getMessage());
 			outputStream.flush();
 		}
-	}
-
-	@Override
-	public void log(String msg)
-	{
-		if (getServletContext() != null)
-			super.log(msg);
-		else
-			System.out.println(msg);
 	}
 
 	protected Map<String, String[]> getParams(HttpServletRequest request)

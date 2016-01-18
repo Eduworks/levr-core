@@ -22,7 +22,6 @@ public interface Resolvable extends Cloneable
 	Object resolve(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
 			throws JSONException;
 	void build(String key, Object value) throws JSONException;
-	Object clone() throws CloneNotSupportedException;
 	String toOriginalJson() throws JSONException;
 	String toJson() throws JSONException;
 	String getDescription();

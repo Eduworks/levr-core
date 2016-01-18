@@ -38,8 +38,8 @@ import com.eduworks.lang.util.EwCache;
 import com.eduworks.lang.util.EwJson;
 import com.eduworks.levr.servlet.LevrServlet;
 import com.eduworks.resolver.Context;
+import com.eduworks.resolver.Cruncher;
 import com.eduworks.resolver.Resolvable;
-import com.eduworks.resolver.Resolver;
 import com.eduworks.resolver.ResolverFactory;
 import com.eduworks.resolver.exception.SoftException;
 import com.eduworks.resolver.lang.LevrResolverParser;
@@ -51,21 +51,14 @@ import com.eduworks.util.io.InMemoryFile;
 @SuppressWarnings("serial")
 public class LevrResolverServlet extends LevrServlet
 {
-	public static JSONObject config;
-	public static JSONObject functions;
-	static File configFile;
+	public static Map<String, Resolvable> resolvableWebServices;
+	public static Map<String, Resolvable> resolvableFunctions;
 	public static List<File> codeFiles;
-	static long lastModified = 0;
-	public static long lastChecked = 0;
-	private static String embeddedCode = "";
+	static long codeFilesLastModifiedMs = 0;
+	public static long codeFilesLastCheckedMs = 0;
 	public static Object lock = new Object();
 	
 	private static final String FAVICON_REQUEST_STRING = "favicon.ico"; 	      
-
-	public static void setEmbeddedCode(String code)
-	{
-		embeddedCode = code;
-	}
 
 	static
 	{
@@ -74,33 +67,22 @@ public class LevrResolverServlet extends LevrServlet
 
 	public static boolean initConfig(PrintStream pw) throws IOException
 	{
-		if (lastChecked + 5000 < System.currentTimeMillis())
+		if (codeFilesLastCheckedMs + 5000 < System.currentTimeMillis())
 		{
-			lastChecked = System.currentTimeMillis();
-			if (config == null || getFilesLastModified(new File(EwFileSystem.getWebConfigurationPath())) != lastModified || codeFiles.size() == 0)
+			codeFilesLastCheckedMs = System.currentTimeMillis();
+			if (resolvableWebServices == null || getFilesLastModified(new File(EwFileSystem.getWebConfigurationPath())) != codeFilesLastModifiedMs || codeFiles.size() == 0)
 			{
 				FileReader input = null;
 				try
 				{
 					synchronized (lock)
 					{
-						config = new JSONObject();
-						functions = new JSONObject();
-
+						resolvableWebServices = new EwMap<String, Resolvable>();
+						resolvableFunctions = new EwMap<String, Resolvable>();
 						codeFiles = new EwList<File>();
-
-						String embeddedName = "commands";
-						JSONObject scriptPack = new JSONObject();
-						scriptPack.put("function", "javascript");
-						scriptPack.put("expression", embeddedCode);
-						Map<String, JSONObject> scriptStreams = new EwMap<String, JSONObject>();
-						scriptStreams.put(embeddedName, scriptPack);
-						mergeInto(config, scriptStreams);
-
 						loadAdditionalConfigFiles(new File(EwFileSystem.getWebConfigurationPath()));
-
 					}
-					for (String webService : EwJson.getKeys(functions))
+					for (String webService : resolvableFunctions.keySet())
 					{
 						if (webService.toLowerCase().endsWith("autoexecute"))
 						{
@@ -135,70 +117,71 @@ public class LevrResolverServlet extends LevrServlet
 		return true;
 	}
 
-	public static void loadAdditionalConfigFiles(File f) throws JSONException
+	public static void loadAdditionalConfigFiles(File codeFile) throws JSONException
 	{
-		if (f.canRead()) {
-			if (f.isDirectory())
-				for (File f2 : f.listFiles())
+		if (codeFile.canRead())
+		{
+			if (codeFile.isDirectory())
+				for (File f2 : codeFile.listFiles())
 					loadAdditionalConfigFiles(f2);
-			else if (f.isFile())
+			else if (codeFile.isFile())
 			{
 				FileInputStream fileHandle = null;
 				try
 				{
-					if (f.getName().endsWith(".rsl"))
+					if (codeFile.getName().endsWith(".rsl"))
 					{
-						log.debug("Loading: " + f.getPath());
-						codeFiles.add(f);
-						mergeInto(config, LevrResolverParser.decodeStreams(f));
-						lastModified = Math.max(f.lastModified(), lastModified);
+						log.debug("Loading: " + codeFile.getPath());
+						codeFiles.add(codeFile);
+						bindWebServices(resolvableWebServices, LevrResolverParser.decodeStreams(codeFile));
+						codeFilesLastModifiedMs = Math.max(codeFile.lastModified(), codeFilesLastModifiedMs);
 					}
-					if (f.getName().endsWith(".rs2"))
+					if (codeFile.getName().endsWith(".rs2"))
 					{
-						log.debug("Loading: " + f.getPath());
-						codeFiles.add(f);
-						mergeInto(config, functions, LevrResolverV2Parser.decodeStreams(f));
-						lastModified = Math.max(f.lastModified(), lastModified);
+						log.debug("Loading: " + codeFile.getPath());
+						codeFiles.add(codeFile);
+						bindWebServicesAndFunctions(resolvableWebServices, resolvableFunctions, LevrResolverV2Parser.decodeStreams(codeFile));
+						codeFilesLastModifiedMs = Math.max(codeFile.lastModified(), codeFilesLastModifiedMs);
 					}
 					JSONObject scriptPack = null;
 					Map<String, JSONObject> scriptStreams = null;
-					if (f.getName().endsWith(".psl"))
+					if (codeFile.getName().endsWith(".psl"))
 					{
-						log.debug("Loading: " + f.getPath());
-						codeFiles.add(f);
-						fileHandle = new FileInputStream(f);
-						String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
+						log.debug("Loading: " + codeFile.getPath());
+						codeFiles.add(codeFile);
+						fileHandle = new FileInputStream(codeFile);
+						String cleanFilename = codeFile.getName().substring(0, codeFile.getName().lastIndexOf("."));
 						scriptPack = new JSONObject();
 						scriptPack.put("function", "python");
 						scriptPack.put("expression", IOUtils.toString(fileHandle));
 						scriptStreams = new EwMap<String, JSONObject>();
 						scriptStreams.put(cleanFilename, scriptPack);
-						mergeInto(config, scriptStreams);
-						lastModified = Math.max(f.lastModified(), lastModified);
+						bindWebServices(resolvableWebServices, scriptStreams);
+						codeFilesLastModifiedMs = Math.max(codeFile.lastModified(), codeFilesLastModifiedMs);
 					}
-					if (f.getName().endsWith(".jsl"))
+					if (codeFile.getName().endsWith(".jsl"))
 					{
-						log.debug("Loading: " + f.getPath());
-						codeFiles.add(f);
-						fileHandle = new FileInputStream(f);
-						String cleanFilename = f.getName().substring(0, f.getName().lastIndexOf("."));
+						log.debug("Loading: " + codeFile.getPath());
+						codeFiles.add(codeFile);
+						fileHandle = new FileInputStream(codeFile);
+						String cleanFilename = codeFile.getName().substring(0, codeFile.getName().lastIndexOf("."));
 						scriptPack = new JSONObject();
 						scriptPack.put("function", "javascript");
 						scriptPack.put("expression", IOUtils.toString(fileHandle));
 						scriptStreams = new EwMap<String, JSONObject>();
 						scriptStreams.put(cleanFilename, scriptPack);
-						mergeInto(config, scriptStreams);
-						lastModified = Math.max(f.lastModified(), lastModified);
+						bindWebServices(resolvableWebServices, scriptStreams);
+						codeFilesLastModifiedMs = Math.max(codeFile.lastModified(), codeFilesLastModifiedMs);
 					}
 				}
 				catch (NullPointerException ex)
 				{
-					System.out.println("Failed on " + f.getPath());
+					System.out.println("Failed on " + codeFile.getPath());
 					ex.printStackTrace();
 				}
 				catch (IOException e)
 				{
-					System.out.println("Failed on " + f.getPath());
+					System.out.println("Failed on " + codeFile.getPath());
 					e.printStackTrace();
 				}
 				finally
@@ -210,18 +193,18 @@ public class LevrResolverServlet extends LevrServlet
 		}
 	}
 
-	private static void mergeInto(JSONObject config2, Map<String, JSONObject> decodeStreams) throws JSONException
+	private static void bindWebServices(Map<String, Resolvable> config2, Map<String, JSONObject> decodeStreams) throws JSONException
 	{
 		for (Entry<String, JSONObject> entry : decodeStreams.entrySet())
-			config2.put((entry.getKey().startsWith("/") ? "" : "/") + entry.getKey(), entry.getValue());
+			config2.put((entry.getKey().startsWith("/") ? "" : "/") + entry.getKey(), ResolverFactory.create(entry.getValue()));
 	}
 
-	private static void mergeInto(JSONObject config2, JSONObject functions2, Tuple<Map<String, JSONObject>, Map<String, JSONObject>> decodeStreams)
-			throws JSONException
+	private static void bindWebServicesAndFunctions(Map<String, Resolvable> config2, Map<String, Resolvable> functions2,
+			Tuple<Map<String, JSONObject>, Map<String, JSONObject>> decodeStreams) throws JSONException
 	{
-		mergeInto(config2, decodeStreams.getFirst());
+		bindWebServices(config2, decodeStreams.getFirst());
 		for (Entry<String, JSONObject> entry : decodeStreams.getSecond().entrySet())
-			functions2.put(entry.getKey().substring(1), entry.getValue());
+			functions2.put(entry.getKey().substring(1), ResolverFactory.create(entry.getValue()));
 	}
 
 	@Override
@@ -251,18 +234,18 @@ public class LevrResolverServlet extends LevrServlet
 		Map<String, String[]> parameterMap = Collections.synchronizedMap(new HashMap<String, String[]>(request.getParameterMap()));
 		String jsonpSecurityKey = getStringFromParameter(request, "sec", "");
 		Map<String, InputStream> dataStreams = null;
-		
+
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		PrintStream pw = new PrintStream(outputStream);
 
 		Context c = new Context(request, response, pw);
-		
+
 		if (isPost)
 			if (ServletFileUpload.isMultipartContent(request))
 			{
 				try
 				{
-					dataStreams = decodeMultipartContent(c,request);
+					dataStreams = decodeMultipartContent(c, request);
 				}
 				catch (FileUploadException e)
 				{
@@ -280,37 +263,22 @@ public class LevrResolverServlet extends LevrServlet
 					throw new IOException(e.getMessage());
 				}
 			}
-		
-		if (isPost && !jsonpSecurityKey.isEmpty())
+
+		if (isJsonpRequest(isPost, jsonpSecurityKey))
 			pw = new PrintStream(os);
 		else
-			crossDomainFixStart(request, pw);
+			startJsonpPayload(request, pw);
 
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
 		response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description");
 
-		if (!isPost && !jsonpSecurityKey.isEmpty())
-			try
-			{
-				SoftReference<byte[]> softReference = holdingCache.get(jsonpSecurityKey);
-				if (softReference == null)
-					throw new Exception("Cannot find your data payload. Sorry.");
-				byte[] payload = softReference.get();
-				if (payload == null)
-					throw new Exception("Lost your data payload. Please try again.");
-				holdingCache.remove(jsonpSecurityKey);
-				pw.write(payload);
-			}
-			catch (Exception e)
-			{
-				pw.print("{\"error\":\"" + e.toString() + "\"}");
-			}
+		if (isJsonpPayloadRequest(isPost, jsonpSecurityKey))
+			retreiveJsonpPayload(jsonpSecurityKey, pw);
 		else
-		{
 			try
 			{
-				execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
+				execute(request, response, requestString, c, parameterMap, pw, dataStreams);
 				c.success();
 			}
 			catch (JSONException e)
@@ -318,33 +286,68 @@ public class LevrResolverServlet extends LevrServlet
 				c.failure();
 				if (response != null)
 					response.setContentType("text/plain");
-				pw.print("{\"error\":\"" + e.toString() + "\"}");
+				try
+				{
+					JSONObject jo = new JSONObject();
+					jo.put("error", e.toString());
+					pw.print(jo.toString(2));
+				}
+				catch (JSONException e1)
+				{
+					e1.printStackTrace();
+				}
 			}
 			finally
 			{
 				c.finish();
 			}
-		}
 
-		pw.flush();
-
-		if (isPost && !jsonpSecurityKey.isEmpty())
-			storePost(jsonpSecurityKey, os.toByteArray());
+		if (isJsonpRequest(isPost, jsonpSecurityKey))
+			storeJsonpPayload(jsonpSecurityKey, os.toByteArray());
 		else
-			crossDomainFixEnd(request, pw);
+			finishJsonpPayload(request, pw);
+
 		pw.flush();
+	}
+
+	private boolean isJsonpPayloadRequest(boolean isPost, String jsonpSecurityKey)
+	{
+		return !isPost && !jsonpSecurityKey.isEmpty();
+	}
+
+	private boolean isJsonpRequest(boolean isPost, String jsonpSecurityKey)
+	{
+		return isPost && !jsonpSecurityKey.isEmpty();
+	}
+
+	private void retreiveJsonpPayload(String jsonpSecurityKey, PrintStream pw)
+	{
+		try
+		{
+			SoftReference<byte[]> softReference = holdingCache.get(jsonpSecurityKey);
+			if (softReference == null)
+				throw new Exception("Cannot find your data payload. Sorry.");
+			byte[] payload = softReference.get();
+			if (payload == null)
+				throw new Exception("Lost your data payload. Please try again.");
+			holdingCache.remove(jsonpSecurityKey);
+			pw.write(payload);
+		}
+		catch (Exception e)
+		{
+			pw.print("{\"error\":\"" + e.toString() + "\"}");
+		}
 	}
 
 	static HashMap<String, SoftReference<byte[]>> holdingCache = new HashMap<String, SoftReference<byte[]>>();
 
-	private void storePost(String sec, byte[] resultsAsString)
+	private void storeJsonpPayload(String sec, byte[] resultsAsString)
 	{
 		if (sec == null || sec.isEmpty())
 			return;
 		holdingCache.put(sec, new SoftReference<byte[]>(resultsAsString));
 	}
 
-	@SuppressWarnings("unchecked")
 	private Map<String, InputStream> decodeMultipartContent(Context c, HttpServletRequest request) throws FileUploadException, IOException
 	{
 		LinkedHashMap<String, InputStream> results = new LinkedHashMap<String, InputStream>();
@@ -354,14 +357,13 @@ public class LevrResolverServlet extends LevrServlet
 
 		for (FileItem item : parseRequest)
 		{
-			c.filenames.put(item.getFieldName(),item.getName());
+			c.filenames.put(item.getFieldName(), item.getName());
 			results.put(item.getFieldName(), new ByteArrayInputStream(IOUtils.toByteArray(item.getInputStream())));
 		}
 		log.debug("Decoded " + results.size() + " multi part mime inputs.");
 		return results;
 	}
 
-	//@SuppressWarnings("unchecked")
 	private Map<String, InputStream> decodeSimpleContent(HttpServletRequest request) throws FileUploadException, IOException
 	{
 		LinkedHashMap<String, InputStream> results = new LinkedHashMap<String, InputStream>();
@@ -371,23 +373,17 @@ public class LevrResolverServlet extends LevrServlet
 		return results;
 	}
 
-	public static void execute(Logger log, HttpServletRequest request, HttpServletResponse response, String requestString, Context c,
-			Map<String, String[]> parameterMap, PrintStream pw, Map<String, InputStream> dataStreams) throws IOException, JSONException
+	public static void execute(HttpServletRequest request, HttpServletResponse response, String requestString, Context c, Map<String, String[]> parameterMap,
+			PrintStream pw, Map<String, InputStream> dataStreams) throws IOException, JSONException
 	{
 		if (!initConfig(pw))
 			return;
 
-		final boolean flushCache = getParameter("flushCache", parameterMap);
 		final boolean flushAllCache = getParameter("flushAllCache", parameterMap);
 		final boolean inline = getParameter("inline", parameterMap);
 
-		if (flushCache)
-			Resolver.clearCache();
 		if (flushAllCache)
-		{
 			EwCache.clearAll();
-			Resolver.clearCache();
-		}
 
 		try
 		{
@@ -397,7 +393,6 @@ public class LevrResolverServlet extends LevrServlet
 			parameterMap.put("ip", new String[] { ip });
 			parameterMap.put("threadId", new String[] { Thread.currentThread().getName() });
 
-			ResolverFactory.populateFactorySpecsDynamically();
 			Object result = execute(log, false, requestString, c, parameterMap, dataStreams, true);
 
 			response.setHeader("cache-control", "private, no-cache, no-store");
@@ -460,12 +455,10 @@ public class LevrResolverServlet extends LevrServlet
 		}
 		catch (SoftException ex)
 		{
-			Resolver.clearThreadCache();
-			execute(log, request, response, requestString, c, parameterMap, pw, dataStreams);
+			execute(request, response, requestString, c, parameterMap, pw, dataStreams);
 		}
 		finally
 		{
-			Resolver.clearThreadCache();
 		}
 	}
 
@@ -476,7 +469,15 @@ public class LevrResolverServlet extends LevrServlet
 		if (noisy)
 			log.info("Request: " + requestString + toString(parameterMap));
 		long ms = System.currentTimeMillis();
+		long nanos = System.nanoTime();
 		Object result = resolver.resolve(c, parameterMap, dataStreams);
+		long elapsed = System.nanoTime()-nanos;
+		if (resolver instanceof Cruncher)
+		{
+			((Cruncher)resolver).nanosProcessing.addAndGet(elapsed);
+			((Cruncher)resolver).nanosInside.addAndGet(elapsed);
+			((Cruncher)resolver).executions.incrementAndGet();
+		}
 		if (noisy)
 			log.info("Response (" + (System.currentTimeMillis() - ms) + "ms): " + requestString + toString(parameterMap));
 		return result;
@@ -488,27 +489,28 @@ public class LevrResolverServlet extends LevrServlet
 		// If it works, then add the remaining part to a parameter.
 		String oldRequestString = requestString;
 		String paramString = "";
-		while (requestString.contains("/") && requestString.length() > 0 && config.has(requestString) == false
-				&& (!useFunctions || functions.has(requestString)))
+		while (requestString.contains("/") && requestString.length() > 0 && resolvableWebServices.containsKey(requestString) == false
+				&& (!useFunctions || resolvableFunctions.containsKey(requestString)))
 		{
-			paramString = requestString.substring(requestString.lastIndexOf("/"))+paramString;
+			paramString = requestString.substring(requestString.lastIndexOf("/")) + paramString;
 			requestString = requestString.substring(0, requestString.lastIndexOf("/"));
 		}
+
 		if (requestString.equals(""))
 			requestString = oldRequestString;
+
 		parameterMap.put("urlRemainder", new String[] { paramString });
-		JSONObject jsonObject=null;
+		Resolvable resolvable = null;
+
 		synchronized (lock)
 		{
-			jsonObject = config.optJSONObject(requestString);
-			if (useFunctions && jsonObject == null)
-			{
-				jsonObject = functions.getJSONObject(requestString);
-			}
+			resolvable = resolvableWebServices.get(requestString);
+			if (useFunctions && resolvable == null)
+				resolvable = resolvableFunctions.get(requestString);
+			if (resolvable == null)
+				throw new RuntimeException("Service does not exist: " + requestString);
+			return resolvable;
 		}
-		if (jsonObject == null)
-			throw new RuntimeException("Service does not exist: " + requestString);
-		return (Resolvable) ResolverFactory.create(jsonObject);
 	}
 
 	private static long getFilesLastModified(File dir)
@@ -516,7 +518,8 @@ public class LevrResolverServlet extends LevrServlet
 		long lmodified = 0;
 		for (File f : dir.listFiles())
 		{
-			if (f.canRead()) {
+			if (f.canRead())
+			{
 				if (f.isDirectory())
 					lmodified = Math.max(lmodified, getFilesLastModified(f));
 				else if (f.isFile())

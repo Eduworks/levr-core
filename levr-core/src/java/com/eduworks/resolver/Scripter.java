@@ -16,7 +16,7 @@ import com.eduworks.lang.EwList;
 import com.eduworks.lang.json.impl.EwJsonObject;
 import com.eduworks.resolver.exception.EditableRuntimeException;
 
-public abstract class Scripter implements Resolvable, Cloneable {
+public abstract class Scripter implements Resolvable {
 	Map<String, Object> data = null;
 	public boolean resolverCompatibilityReplaceMode = true;
 	public static Logger log = Logger.getLogger(Scripter.class);
@@ -76,19 +76,6 @@ public abstract class Scripter implements Resolvable, Cloneable {
 		return results.iterator();
 	}
 
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		try {
-			return ResolverFactory.create(this);
-		} catch (JSONException e) {
-			try {
-				return new EwJsonObject(toString());
-			} catch (JSONException e1) {
-				throw new RuntimeException(e1);
-			}
-		}
-	}
-	
 	public Object jsonObject(Object o) {
 		
 		if (o instanceof JSONObject) {
@@ -132,30 +119,18 @@ public abstract class Scripter implements Resolvable, Cloneable {
 			for (Entry<String, String[]> parameter : parameterSet)
 				functionPack.put(parameter.getKey(), parameter.getValue());
 			Object o = ResolverFactory.create(functionPack);
-			if (o instanceof Resolver) {
-				Resolver resolver = (Resolver) o;
-				if (resolverCompatibilityReplaceMode)
-					resolver = (Resolver) resolver.clone();
-				return Resolver.resolveAChild(c,parameters, dataStreams, key,
-						resolver);
-			}
 			if (o instanceof Cruncher) {
 				Cruncher cruncher = (Cruncher) o;
-				return Resolver.resolveAChild(c,parameters, dataStreams, key,
-						cruncher);
+				cruncher.resolve(c, parameters, dataStreams);
 			}
 			if (o instanceof Scripter) {
 				Scripter cruncher = (Scripter) o;
-				return Resolver.resolveAChild(c,parameters, dataStreams, key,
-						cruncher);
+				cruncher.resolve(c, parameters, dataStreams);
 			}
 			return o;
 		} catch (EditableRuntimeException ex) {
 			ex.append("in " + getKeys(this));
 			throw ex;
-		} catch (CloneNotSupportedException e) {
-			e.printStackTrace();
-			throw new EditableRuntimeException("Failed to clone Resolver.");
 		}
 	}
 	
@@ -177,7 +152,7 @@ public abstract class Scripter implements Resolvable, Cloneable {
 	}
 
 	public static boolean isSetting(String key) {
-		return Resolver.isSetting(key);
+		return Cruncher.isSetting(key);
 	}
 
 	public void build(String key, Object value) {

@@ -1,6 +1,8 @@
 package com.eduworks.resolver;
 
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.HashSet;
@@ -9,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -17,6 +20,7 @@ import org.json.JSONObject;
 
 import com.eduworks.lang.EwList;
 import com.eduworks.lang.json.impl.EwJsonObject;
+import com.eduworks.lang.util.EwUri;
 import com.eduworks.resolver.exception.EditableRuntimeException;
 
 /*
@@ -29,8 +33,11 @@ import com.eduworks.resolver.exception.EditableRuntimeException;
  * One use case per cruncher. No special considerations, multi-purpose or anything like that.
  * Define cruncher's activity at top of cruncher.
  */
-public abstract class Cruncher implements Resolvable, Cloneable
+public abstract class Cruncher implements Resolvable
 {
+	public AtomicLong  nanosProcessing = new AtomicLong(0);
+	public AtomicLong nanosInside = new AtomicLong(0);
+	public AtomicLong executions = new AtomicLong(0);
 	public Map<String, Object> data = null;
 	public boolean resolverCompatibilityReplaceMode = true;
 	public static Logger log = Logger.getLogger(Cruncher.class);
@@ -50,9 +57,28 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return key.equals("obj");
 	}
 
-	public static void clearThreadCache()
+	/** Equivalent to {@link EwUri#encodeValue(String)}, but throws exception. */
+	protected static String encodeValue(String value) throws UnsupportedEncodingException
 	{
-		Resolver.threadCache.remove(Thread.currentThread().getName());
+		return URLEncoder.encode(decodeValue(value), EwUri.UTF_8);
+	}
+
+	public static String decodeValue(String value)
+	{
+		return EwUri.decodeValue(value);
+	}
+
+	public EwList<String> getAsStrings(String string, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	{
+		Object o = get(string, c, parameters, dataStreams);
+		if (o == null) return null;
+		if (o instanceof String)
+		{
+			EwList<String> l = new EwList<String>();
+			l.add(o.toString());
+			return l;
+		}
+		return new EwList<Object>(getAsJsonArray(string, c, parameters, dataStreams)).toStringsEwList();
 	}
 
 	public String toJson() throws JSONException
@@ -91,6 +117,8 @@ public abstract class Cruncher implements Resolvable, Cloneable
 
 	protected boolean has(String string)
 	{
+		if (data == null)
+			return false;
 		return data.containsKey(string);
 	}
 
@@ -104,21 +132,7 @@ public abstract class Cruncher implements Resolvable, Cloneable
 	@Override
 	public Object clone() throws CloneNotSupportedException
 	{
-		try
-		{
-			return ResolverFactory.create(this);
-		}
-		catch (JSONException e)
-		{
-			try
-			{
-				return new EwJsonObject(toString());
-			}
-			catch (JSONException e1)
-			{
-				throw new RuntimeException(e1);
-			}
-		}
+		return null;
 	}
 
 	public Set<String> keySet()
@@ -128,28 +142,29 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return data.keySet();
 	}
 
-	protected Object resolveAChild(String key, Context c,Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected Object resolveAChild(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		if (c.shouldAbort()) return null;
+		if (c.shouldAbort())
+			return null;
 		try
 		{
 			Object o = get(key);
-			if (o instanceof Resolver)
-			{
-				Resolver resolver = (Resolver) o;
-				if (resolverCompatibilityReplaceMode)
-					resolver = (Resolver) resolver.clone();
-				return Resolver.resolveAChild(c,parameters, dataStreams, key, resolver);
-			}
 			if (o instanceof Cruncher)
 			{
+				long nanos = System.nanoTime();
 				Cruncher cruncher = (Cruncher) o;
-				return Resolver.resolveAChild(c,parameters, dataStreams, key, cruncher);
+				Object result = resolveAChild(c, parameters, dataStreams, key, cruncher);
+				long diff = System.nanoTime()-nanos;
+				cruncher.nanosProcessing.addAndGet(diff);
+				cruncher.nanosInside.addAndGet(diff);
+				cruncher.executions.incrementAndGet();
+				nanosProcessing.addAndGet(-diff);
+				return result;
 			}
 			if (o instanceof Scripter)
 			{
 				Scripter scripter = (Scripter) o;
-				return Resolver.resolveAChild(c,parameters, dataStreams, key, scripter);
+				return resolveAChild(c, parameters, dataStreams, key, scripter);
 			}
 			return o;
 		}
@@ -158,11 +173,17 @@ public abstract class Cruncher implements Resolvable, Cloneable
 			ex.append("in " + getKeys(this));
 			throw ex;
 		}
-		catch (CloneNotSupportedException e)
-		{
-			e.printStackTrace();
-			throw new EditableRuntimeException("Failed to clone Resolver.");
-		}
+	}
+	
+	private Object resolveAChild(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolvable thing) throws JSONException
+	{
+		if (c.shouldAbort())
+			return null;
+		if (thing instanceof Cruncher)
+			return ((Cruncher) thing).resolve(c, parameters, dataStreams);
+		if (thing instanceof Scripter)
+			return ((Scripter) thing).resolve(c, parameters, dataStreams);
+		throw new RuntimeException("Don't understand how to resolve " + thing);
 	}
 
 	private Set<String> getKeys(Cruncher cruncher)
@@ -180,14 +201,15 @@ public abstract class Cruncher implements Resolvable, Cloneable
 	protected boolean hasParam(String key)
 	{
 		if (data != null)
-		if (data.containsKey(key))
-			if (data.get(key) instanceof String)
-				if (data.get(key).toString().length()>1)
-				return ((String) data.get(key)).startsWith("@");
+			if (data.containsKey(key))
+				if (data.get(key) instanceof String)
+					if (data.get(key).toString().length() > 1)
+						return ((String) data.get(key)).startsWith("@");
 		return false;
 	}
 
-	protected String optAsString(String key, String defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public String optAsString(String key, String defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
+			throws JSONException
 	{
 		String result = getAsString(key, c, parameters, dataStreams);
 		if (result == null)
@@ -217,7 +239,7 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		{
 			try
 			{
-				return NumberFormat.getNumberInstance(java.util.Locale.US).parse((String)obj).doubleValue();
+				return NumberFormat.getNumberInstance(java.util.Locale.US).parse((String) obj).doubleValue();
 			}
 			catch (ParseException e)
 			{
@@ -226,7 +248,8 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		}
 	}
 
-	public Double optAsDouble(String key, double defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	public Double optAsDouble(String key, double defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
+			throws JSONException
 	{
 		if (has(key))
 			try
@@ -247,6 +270,21 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return objectToString(obj);
 	}
 
+	public Integer getAsInteger(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	{
+		Object obj = get(key, c, parameters, dataStreams);
+		if (obj == null)
+			return null;
+		if (obj instanceof Double)
+			if (((Double) obj) == Math.round(((Double) obj)))
+				return ((Double) obj).intValue();
+			else
+				return ((Double) obj).intValue();
+		if (!(obj instanceof Integer))
+			throw new EditableRuntimeException("Expected Integer, got " + obj.getClass().getSimpleName());
+		return (Integer) obj;
+	}
+
 	public String objectToString(Object obj)
 	{
 		if (obj == null)
@@ -263,7 +301,8 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return (String) obj;
 	}
 
-	protected boolean optAsBoolean(String key, boolean defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected boolean optAsBoolean(String key, boolean defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
+			throws JSONException
 	{
 		String string = getAsString(key, c, parameters, dataStreams);
 		if (string == null)
@@ -271,7 +310,8 @@ public abstract class Cruncher implements Resolvable, Cloneable
 		return Boolean.parseBoolean(string);
 	}
 
-	protected int optAsInteger(String key, int defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
+	protected int optAsInteger(String key, int defaultx, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams)
+			throws JSONException
 	{
 		String string = getAsString(key, c, parameters, dataStreams);
 		if (string == null)
@@ -288,10 +328,9 @@ public abstract class Cruncher implements Resolvable, Cloneable
 	protected Object getObj(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		String key = "obj";
-		if (hasParam(key))
-			return Resolver.getParameter(data.get(key).toString().substring(1), parameters);
 		return get(key, c, parameters, dataStreams);
 	}
+
 	protected String getObjAsString(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		String key = "obj";
@@ -328,7 +367,7 @@ public abstract class Cruncher implements Resolvable, Cloneable
 
 	public static boolean isSetting(String key)
 	{
-		return Resolver.isSetting(key);
+		return key != null && !key.isEmpty() && key.charAt(0) == '_';
 	}
 
 	public void build(String key, Object value)
@@ -340,13 +379,28 @@ public abstract class Cruncher implements Resolvable, Cloneable
 
 	protected Object get(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
+		if (has("_"+key))
+			key = "_"+key;
 		if (hasParam(key))
-			return (String) Resolver.getParameter(data.get(key).toString().substring(1), parameters);
+			return (String) getParameter(data.get(key).toString().substring(1), parameters);
 
-		Object obj = resolveAChild(key, c,parameters, dataStreams);
+		Object obj = resolveAChild(key, c, parameters, dataStreams);
 		return obj;
 	}
 
+	public static Object getParameter(String key, Map<String, String[]> parameters)
+	{
+		if (parameters == null)
+			return null;
+
+		String[] params = parameters.get(key);
+		if (params == null)
+			return null;
+		else if (params.length == 1)
+			return params[0];
+
+		return params;
+	}
 	public String getResolverName()
 	{
 		return getClass().getSimpleName().replace("Cruncher", "").toLowerCase().substring(0, 1)
