@@ -382,7 +382,7 @@ public abstract class Cruncher implements Resolvable
 		if (has("_"+key))
 			key = "_"+key;
 		if (hasParam(key))
-			return (String) getParameter(data.get(key).toString().substring(1), parameters);
+			return getParameter(data.get(key).toString().substring(1), parameters);
 
 		Object obj = resolveAChild(key, c, parameters, dataStreams);
 		return obj;
