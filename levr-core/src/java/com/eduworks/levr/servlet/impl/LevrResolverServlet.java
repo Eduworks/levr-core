@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.servlet.ServletInputStream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -57,8 +58,8 @@ public class LevrResolverServlet extends LevrServlet
 	static long codeFilesLastModifiedMs = 0;
 	public static long codeFilesLastCheckedMs = 0;
 	public static Object lock = new Object();
-	
-	private static final String FAVICON_REQUEST_STRING = "favicon.ico"; 	      
+
+	private static final String FAVICON_REQUEST_STRING = "favicon.ico";
 
 	static
 	{
@@ -70,7 +71,8 @@ public class LevrResolverServlet extends LevrServlet
 		if (codeFilesLastCheckedMs + 5000 < System.currentTimeMillis())
 		{
 			codeFilesLastCheckedMs = System.currentTimeMillis();
-			if (resolvableWebServices == null || getFilesLastModified(new File(EwFileSystem.getWebConfigurationPath())) != codeFilesLastModifiedMs || codeFiles.size() == 0)
+			if (resolvableWebServices == null || getFilesLastModified(new File(EwFileSystem.getWebConfigurationPath())) != codeFilesLastModifiedMs
+					|| codeFiles.size() == 0)
 			{
 				FileReader input = null;
 				try
@@ -230,7 +232,8 @@ public class LevrResolverServlet extends LevrServlet
 	{
 		String requestURI = request.getRequestURI();
 		String requestString = requestURI.substring(requestURI.indexOf(getServletPathExample()) + getServletPathExample().length());
-		if (requestString.toLowerCase().endsWith(FAVICON_REQUEST_STRING.toLowerCase())) return;
+		if (requestString.toLowerCase().endsWith(FAVICON_REQUEST_STRING.toLowerCase()))
+			return;
 		Map<String, String[]> parameterMap = Collections.synchronizedMap(new HashMap<String, String[]>(request.getParameterMap()));
 		String jsonpSecurityKey = getStringFromParameter(request, "sec", "");
 		Map<String, InputStream> dataStreams = null;
@@ -358,7 +361,16 @@ public class LevrResolverServlet extends LevrServlet
 		for (FileItem item : parseRequest)
 		{
 			c.filenames.put(item.getFieldName(), item.getName());
-			results.put(item.getFieldName(), new ByteArrayInputStream(IOUtils.toByteArray(item.getInputStream())));
+			InputStream inputStream = item.getInputStream();
+			try
+			{
+				results.put(item.getFieldName(), new ByteArrayInputStream(IOUtils.toByteArray(inputStream)));
+			}
+			finally
+			{
+				EwFileSystem.closeIt(inputStream);
+				item.delete();
+			}
 		}
 		log.debug("Decoded " + results.size() + " multi part mime inputs.");
 		return results;
@@ -368,7 +380,15 @@ public class LevrResolverServlet extends LevrServlet
 	{
 		LinkedHashMap<String, InputStream> results = new LinkedHashMap<String, InputStream>();
 
-		results.put("simple", new ByteArrayInputStream(IOUtils.toByteArray(request.getInputStream())));
+		ServletInputStream inputStream = request.getInputStream();
+		try
+		{
+			results.put("simple", new ByteArrayInputStream(IOUtils.toByteArray(inputStream)));
+		}
+		finally
+		{
+			EwFileSystem.closeIt(inputStream);
+		}
 		log.debug("Decoded " + results.size() + " raw input.");
 		return results;
 	}
@@ -471,12 +491,12 @@ public class LevrResolverServlet extends LevrServlet
 		long ms = System.currentTimeMillis();
 		long nanos = System.nanoTime();
 		Object result = resolver.resolve(c, parameterMap, dataStreams);
-		long elapsed = System.nanoTime()-nanos;
+		long elapsed = System.nanoTime() - nanos;
 		if (resolver instanceof Cruncher)
 		{
-			((Cruncher)resolver).nanosProcessing.addAndGet(elapsed);
-			((Cruncher)resolver).nanosInside.addAndGet(elapsed);
-			((Cruncher)resolver).executions.incrementAndGet();
+			((Cruncher) resolver).nanosProcessing.addAndGet(elapsed);
+			((Cruncher) resolver).nanosInside.addAndGet(elapsed);
+			((Cruncher) resolver).executions.incrementAndGet();
 		}
 		if (noisy)
 			log.info("Response (" + (System.currentTimeMillis() - ms) + "ms): " + requestString + toString(parameterMap));
