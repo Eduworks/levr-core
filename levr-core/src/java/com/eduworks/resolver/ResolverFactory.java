@@ -110,8 +110,6 @@ public class ResolverFactory
 					@Override
 					public boolean apply(String input)
 					{
-						if (input.contains("Resolver"))
-							return true;
 						if (input.contains("Cruncher"))
 							return true;
 						if (input.contains("Scripter"))
