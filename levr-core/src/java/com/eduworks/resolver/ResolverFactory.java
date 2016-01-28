@@ -204,7 +204,7 @@ public class ResolverFactory
 			{
 				c2 = cruncherSpecs.get("execute");
 				if (c2 == null)
-					throw new RuntimeException("Neither cruncher nor functione exist: "+name);
+					throw new RuntimeException("Neither cruncher nor function exist: "+name);
 				Cruncher cruncher = c2.newInstance();
 				cruncher.build("service", name);
 				return cruncher;
