@@ -107,7 +107,7 @@ public abstract class Cruncher implements Resolvable
 				if (object == null)
 					continue;
 				if (object instanceof Resolvable)
-					jo.put(key, ((Resolvable) object).toOriginalJson());
+					jo.put(key, new JSONObject(((Resolvable) object).toOriginalJson()));
 				else
 					jo.put(key, object);
 			}
