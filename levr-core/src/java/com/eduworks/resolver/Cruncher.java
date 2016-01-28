@@ -35,7 +35,7 @@ import com.eduworks.resolver.exception.EditableRuntimeException;
  */
 public abstract class Cruncher implements Resolvable
 {
-	public AtomicLong  nanosProcessing = new AtomicLong(0);
+	public AtomicLong nanosProcessing = new AtomicLong(0);
 	public AtomicLong nanosInside = new AtomicLong(0);
 	public AtomicLong executions = new AtomicLong(0);
 	public Map<String, Object> data = null;
@@ -71,7 +71,8 @@ public abstract class Cruncher implements Resolvable
 	public EwList<String> getAsStrings(String string, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
 		Object o = get(string, c, parameters, dataStreams);
-		if (o == null) return null;
+		if (o == null)
+			return null;
 		if (o instanceof String)
 		{
 			EwList<String> l = new EwList<String>();
@@ -99,14 +100,17 @@ public abstract class Cruncher implements Resolvable
 	public String toOriginalJson() throws JSONException
 	{
 		JSONObject jo = new JSONObject();
-		for (String key : data.keySet())
-		{
-			Object object = data.get(key);
-			if (object instanceof Resolvable)
-				jo.put(key, ((Resolvable) object).toOriginalJson());
-			else
-				jo.put(key, object);
-		}
+		if (data != null)
+			for (String key : data.keySet())
+			{
+				Object object = data.get(key);
+				if (object == null)
+					continue;
+				if (object instanceof Resolvable)
+					jo.put(key, ((Resolvable) object).toOriginalJson());
+				else
+					jo.put(key, object);
+			}
 
 		String func = getClass().getSimpleName().replace("Resolver", "").replace("Cruncher", "");
 		func = "c" + Character.toLowerCase(func.charAt(0)) + func.substring(1);
@@ -154,7 +158,7 @@ public abstract class Cruncher implements Resolvable
 				long nanos = System.nanoTime();
 				Cruncher cruncher = (Cruncher) o;
 				Object result = resolveAChild(c, parameters, dataStreams, key, cruncher);
-				long diff = System.nanoTime()-nanos;
+				long diff = System.nanoTime() - nanos;
 				cruncher.nanosProcessing.addAndGet(diff);
 				cruncher.nanosInside.addAndGet(diff);
 				cruncher.executions.incrementAndGet();
@@ -174,8 +178,9 @@ public abstract class Cruncher implements Resolvable
 			throw ex;
 		}
 	}
-	
-	private Object resolveAChild(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolvable thing) throws JSONException
+
+	private Object resolveAChild(Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams, String key, Resolvable thing)
+			throws JSONException
 	{
 		if (c.shouldAbort())
 			return null;
@@ -379,8 +384,8 @@ public abstract class Cruncher implements Resolvable
 
 	protected Object get(String key, Context c, Map<String, String[]> parameters, Map<String, InputStream> dataStreams) throws JSONException
 	{
-		if (has("_"+key))
-			key = "_"+key;
+		if (has("_" + key))
+			key = "_" + key;
 		if (hasParam(key))
 			return getParameter(data.get(key).toString().substring(1), parameters);
 
@@ -401,6 +406,7 @@ public abstract class Cruncher implements Resolvable
 
 		return params;
 	}
+
 	public String getResolverName()
 	{
 		return getClass().getSimpleName().replace("Cruncher", "").toLowerCase().substring(0, 1)
