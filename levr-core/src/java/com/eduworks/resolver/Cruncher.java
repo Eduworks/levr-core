@@ -113,7 +113,7 @@ public abstract class Cruncher implements Resolvable
 			}
 
 		String func = getClass().getSimpleName().replace("Resolver", "").replace("Cruncher", "");
-		func = "c" + Character.toLowerCase(func.charAt(0)) + func.substring(1);
+		func = Character.toLowerCase(func.charAt(0)) + func.substring(1);
 
 		jo.put("function", func);
 		return jo.toString();
