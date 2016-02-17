@@ -16,17 +16,21 @@ import com.eduworks.levr.servlet.impl.LevrResolverServlet;
 
 public abstract class LevrServlet extends HttpServlet
 {
+	protected static final String HTTP_DELETE = "DELETE";
+
+	protected static final String HTTP_POST = "POST";
+
+	protected static final String HTTP_GET = "GET";
+
 	private static final long serialVersionUID = 1L;
 
 	protected static Logger log = Logger.getLogger(LevrResolverServlet.class);
 
 	/* ABSTRACT METHODS */
 
-	public abstract void go(boolean isPost, HttpServletRequest request, HttpServletResponse response, ServletOutputStream outputStream) throws IOException;
+	public abstract void go(String methodType, HttpServletRequest request, HttpServletResponse response, ServletOutputStream outputStream) throws IOException;
 
 	public abstract String getServletPath();
-
-	public abstract String getServletUsage();
 
 	/* OVERRIDDEN METHODS */
 
@@ -40,12 +44,7 @@ public abstract class LevrServlet extends HttpServlet
 		ServletOutputStream outputStream = response.getOutputStream();
 		try
 		{
-			if (Boolean.parseBoolean(getStringFromParameter(request, "usage", "false")))
-			{
-				outputStream.print(this.getServletUsage());
-				return;
-			}
-			go(false, request, response, outputStream);
+			go(HTTP_GET, request, response, outputStream);
 		}
 		catch (Throwable e)
 		{
@@ -67,12 +66,7 @@ public abstract class LevrServlet extends HttpServlet
 		ServletOutputStream outputStream = response.getOutputStream();
 		try
 		{
-			if (Boolean.parseBoolean(getStringFromParameter(request, "usage", "false")))
-			{
-				outputStream.print(this.getServletUsage());
-				return;
-			}
-			go(true, request, response, outputStream);
+			go(HTTP_POST, request, response, outputStream);
 		}
 		catch (Throwable e)
 		{
@@ -84,26 +78,33 @@ public abstract class LevrServlet extends HttpServlet
 		}
 	}
 
-	/**
-	 * Both GET and POST execute in the same fashion. The only difference is
-	 * that a GET is guaranteed not to have datastreams (files) attached to it.
-	 */
 	@Override
 	public void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
 		ServletOutputStream outputStream = response.getOutputStream();
 		try
 		{
-			if (Boolean.parseBoolean(getStringFromParameter(request, "usage", "false")))
-			{
-				outputStream.print(this.getServletUsage());
-				return;
-			}
-			
 			response.setHeader("Access-Control-Allow-Origin", "*");
 			response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
 			response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description");
-
+		}
+		catch (Throwable e)
+		{
+			handleException(response, outputStream, e);
+		}
+		finally
+		{
+			closeOutputStream(request, outputStream);
+		}
+	}
+	
+	@Override
+	public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+	{
+		ServletOutputStream outputStream = response.getOutputStream();
+		try
+		{
+			go(HTTP_DELETE, request, response, outputStream);
 		}
 		catch (Throwable e)
 		{
