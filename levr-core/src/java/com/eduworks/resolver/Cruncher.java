@@ -296,6 +296,8 @@ public abstract class Cruncher implements Resolvable
 			return null;
 		if (obj instanceof Integer)
 			return Integer.toString((Integer) obj);
+		if (obj instanceof Long)
+			return Long.toString((Long) obj);
 		if (obj instanceof Double)
 			if (((Double) obj) == Math.round(((Double) obj)))
 				return Integer.toString(((Double) obj).intValue());
