@@ -222,13 +222,7 @@ public class LevrResolverServlet extends LevrServlet
 	}
 
 	@Override
-	public String getServletUsage()
-	{
-		return "To be written.";
-	}
-
-	@Override
-	public void go(boolean isPost, HttpServletRequest request, HttpServletResponse response, ServletOutputStream outputStream) throws IOException
+	public void go(String methodType, HttpServletRequest request, HttpServletResponse response, ServletOutputStream outputStream) throws IOException
 	{
 		String requestURI = request.getRequestURI();
 		String requestString = requestURI.substring(requestURI.indexOf(getServletPathExample()) + getServletPathExample().length());
@@ -236,6 +230,7 @@ public class LevrResolverServlet extends LevrServlet
 			return;
 		Map<String, String[]> parameterMap = Collections.synchronizedMap(new HashMap<String, String[]>(request.getParameterMap()));
 		String jsonpSecurityKey = getStringFromParameter(request, "sec", "");
+		parameterMap.put("methodType", new String[]{methodType});
 		Map<String, InputStream> dataStreams = null;
 
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -243,7 +238,7 @@ public class LevrResolverServlet extends LevrServlet
 
 		Context c = new Context(request, response, pw);
 
-		if (isPost)
+		if (isPost(methodType))
 			if (ServletFileUpload.isMultipartContent(request))
 			{
 				try
@@ -267,7 +262,7 @@ public class LevrResolverServlet extends LevrServlet
 				}
 			}
 
-		if (isJsonpRequest(isPost, jsonpSecurityKey))
+		if (isJsonpRequest(isPost(methodType), jsonpSecurityKey))
 			pw = new PrintStream(os);
 		else
 			startJsonpPayload(request, pw);
@@ -276,7 +271,7 @@ public class LevrResolverServlet extends LevrServlet
 		response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
 		response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description");
 
-		if (isJsonpPayloadRequest(isPost, jsonpSecurityKey))
+		if (isJsonpPayloadRequest(isPost(methodType), jsonpSecurityKey))
 			retreiveJsonpPayload(jsonpSecurityKey, pw);
 		else
 			try
@@ -305,12 +300,17 @@ public class LevrResolverServlet extends LevrServlet
 				c.finish();
 			}
 
-		if (isJsonpRequest(isPost, jsonpSecurityKey))
+		if (isJsonpRequest(isPost(methodType), jsonpSecurityKey))
 			storeJsonpPayload(jsonpSecurityKey, os.toByteArray());
 		else
 			finishJsonpPayload(request, pw);
 
 		pw.flush();
+	}
+
+	private boolean isPost(String methodType)
+	{
+		return methodType.equals(HTTP_POST);
 	}
 
 	private boolean isJsonpPayloadRequest(boolean isPost, String jsonpSecurityKey)

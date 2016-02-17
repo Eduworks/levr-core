@@ -97,7 +97,7 @@ public abstract class LevrServlet extends HttpServlet
 			closeOutputStream(request, outputStream);
 		}
 	}
-	
+
 	@Override
 	public void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
 	{
