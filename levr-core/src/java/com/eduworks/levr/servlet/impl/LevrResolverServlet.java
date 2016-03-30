@@ -269,7 +269,8 @@ public class LevrResolverServlet extends LevrServlet
 
 		response.setHeader("Access-Control-Allow-Origin", "*");
 		response.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS");
-		response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description");
+		//NAUGHTY! We added signatureSheet for one of our projects.
+		response.setHeader("Access-Control-Allow-Headers", "If-Modified-Since, Content-Type, Content-Range, Content-Disposition, Content-Description, signatureSheet");
 
 		if (isJsonpPayloadRequest(isPost(methodType), jsonpSecurityKey))
 			retreiveJsonpPayload(jsonpSecurityKey, pw);
