@@ -14,6 +14,7 @@
   	
   	<exclude module="servlet-api"/>
 	<exclude org="com.ibm.icu"/>
+	<exclude org="org.slf4j"/>
 	<exclude module="slf4j-log4j12"/>
 	<exclude module="slf4j-simple"/>
 	<exclude module="google-collections"/>

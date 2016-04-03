@@ -90,7 +90,7 @@ public class ResolverFactory
 	{
 		if (cruncherSpecs != null)
 			return;
-		Collection<URL> urlsForCurrentClasspath = ClasspathHelper.forManifest();
+		Collection<URL> urlsForCurrentClasspath = new ArrayList<URL>(ClasspathHelper.forManifest());
 		urlsForCurrentClasspath.addAll(ClasspathHelper.forJavaClassPath());
 		urlsForCurrentClasspath.addAll(ClasspathHelper.forClassLoader());
 		EwSet<URL> urls = new EwSet<URL>();
